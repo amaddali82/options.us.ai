@@ -84,6 +84,10 @@ export async function fetchRecommendations(
     params.append('symbol', filters.symbol.trim().toUpperCase())
   }
 
+  if (filters.optionsOnly) {
+    params.append('options_only', 'true')
+  }
+
   if (cursor) {
     params.append('cursor', cursor)
   }

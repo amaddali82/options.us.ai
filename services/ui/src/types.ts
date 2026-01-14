@@ -110,6 +110,7 @@ export interface FiltersState {
   minConfidence: number
   symbol: string
   sort: string
+  optionsOnly: boolean
 }
 
 export interface HealthResponse {

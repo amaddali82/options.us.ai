@@ -137,7 +137,7 @@ export default function FiltersBar({
             onChange={(e) =>
               onFiltersChange({ ...filters, sort: e.target.value })
             }
-            className="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+            className="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
           >
             <option value="rank">Rank (High to Low)</option>
             <option value="confidence">Confidence (High to Low)</option>
@@ -145,10 +145,28 @@ export default function FiltersBar({
           </select>
         </div>
 
+        {/* Options Only Toggle */}
+        <div className="flex flex-col justify-end">
+          <label className="flex items-center space-x-2 cursor-pointer">
+            <input
+              type="checkbox"
+              checked={filters.optionsOnly}
+              onChange={(e) =>
+                onFiltersChange({ ...filters, optionsOnly: e.target.checked })
+              }
+              className="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 focus:ring-2"
+            />
+            <span className="text-sm font-medium text-gray-700">
+              Options Only
+            </span>
+          </label>
+        </div>
+
         {/* Clear Filters */}
         {(filters.horizon !== 'all' ||
           filters.minConfidence > 0 ||
-          filters.symbol.trim() !== '') && (
+          filters.symbol.trim() !== '' ||
+          filters.optionsOnly) && (
           <div className="flex items-end">
             <button
               onClick={() => {
@@ -158,6 +176,7 @@ export default function FiltersBar({
                   minConfidence: 0,
                   symbol: '',
                   sort: 'rank',
+                  optionsOnly: false,
                 })
               }}
               className="px-3 py-2 text-sm text-gray-600 hover:text-gray-900 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"

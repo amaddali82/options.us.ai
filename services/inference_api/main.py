@@ -2,7 +2,7 @@ from fastapi import FastAPI, Depends, HTTPException, Query, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import Response
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select, and_, func, or_
+from sqlalchemy import select, and_, func, or_, exists
 from datetime import datetime, timezone
 from typing import Optional, List
 import uuid
@@ -196,6 +196,7 @@ async def list_recommendations(
     symbol: Optional[str] = Query(None, description="Filter by symbol (e.g., AAPL)"),
     sort: str = Query("rank", regex="^(rank|confidence|asof)$", description="Sort order: rank, confidence, or asof"),
     cursor: Optional[str] = Query(None, description="Pagination cursor (asof|reco_id)"),
+    options_only: bool = Query(False, description="Show only recommendations with option strategies"),
     db: AsyncSession = Depends(get_async_db)
 ):
     """
@@ -219,6 +220,13 @@ async def list_recommendations(
             filters.append(Recommendation.confidence_overall >= min_conf)
         if symbol:
             filters.append(Recommendation.symbol == symbol.upper())
+        if options_only:
+            # Filter for recommendations that have associated option ideas  
+            filters.append(
+                Recommendation.reco_id.in_(
+                    select(OptionIdea.reco_id).distinct()
+                )
+            )
         
         # Apply cursor-based pagination
         cursor_asof, cursor_reco_id = parse_cursor(cursor)

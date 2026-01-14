@@ -9,15 +9,15 @@ from datetime import datetime, timedelta, timezone, date
 from typing import List, Dict, Tuple, Optional
 from decimal import Decimal
 
-# Symbol universe with approximate current prices (Jan 2026)
+# Symbol universe with realistic current prices (Jan 2025)
 SYMBOL_UNIVERSE = {
     # Mega Cap Tech
-    "AAPL": 178.50, "MSFT": 378.20, "GOOGL": 142.50, "AMZN": 155.30, "META": 385.60,
-    "NVDA": 505.00, "TSLA": 242.80, "NFLX": 485.20, "AMD": 152.30, "CRM": 268.40,
+    "AAPL": 225.50, "MSFT": 428.75, "GOOGL": 178.25, "AMZN": 185.40, "META": 525.80,
+    "NVDA": 725.60, "TSLA": 267.40, "NFLX": 495.30, "AMD": 162.45, "CRM": 285.20,
     
     # Tech & Software
-    "ORCL": 118.50, "ADBE": 562.80, "INTC": 48.20, "CSCO": 52.30, "QCOM": 145.60,
-    "AVGO": 1285.00, "NOW": 742.30, "SNOW": 178.40, "PLTR": 28.50, "U": 32.80,
+    "ORCL": 125.75, "ADBE": 487.30, "INTC": 51.25, "CSCO": 58.40, "QCOM": 158.90,
+    "AVGO": 1342.50, "NOW": 852.40, "SNOW": 125.80, "PLTR": 32.60, "U": 28.90,
     
     # Finance
     "JPM": 168.50, "BAC": 34.20, "GS": 408.50, "MS": 98.40, "C": 58.60,

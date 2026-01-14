@@ -91,7 +91,7 @@ export default function RecommendationsTable({
         {reco.tp1 ? (
           <div className="flex flex-col">
             <span className="font-mono text-sm text-gray-900">
-              {formatPrice(reco.tp1.target_price)}
+              {formatPrice(reco.tp1.value)}
             </span>
             <span className="text-xs text-gray-500">
               ({formatPercent(reco.tp1.confidence)})

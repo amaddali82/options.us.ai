@@ -1,6 +1,5 @@
 import { useQuery } from '@tanstack/react-query'
 import { checkHealth } from '../api'
-import type { HealthResponse } from '../types'
 
 export default function HealthIndicator() {
   const { data, isError } = useQuery({

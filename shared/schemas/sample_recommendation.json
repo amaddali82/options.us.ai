@@ -1,0 +1,102 @@
+{
+  "symbol": "NVDA",
+  "recommendation_type": "BUY",
+  "confidence_overall": 0.88,
+  "current_price": 495.5,
+  "entry_price": 498.0,
+  "targets": [
+    {
+      "price": 520.0,
+      "confidence": 0.85,
+      "timeframe_days": 10,
+      "reasoning": "First resistance breakout"
+    },
+    {
+      "price": 545.0,
+      "confidence": 0.7,
+      "timeframe_days": 20,
+      "reasoning": "Fibonacci 1.618 extension"
+    },
+    {
+      "price": 575.0,
+      "confidence": 0.55,
+      "timeframe_days": 35,
+      "reasoning": "Major psychological level"
+    },
+    {
+      "price": 600.0,
+      "confidence": 0.4,
+      "timeframe_days": 50,
+      "reasoning": "Long-term target"
+    }
+  ],
+  "stop_loss": {
+    "price": 475.0,
+    "confidence": 0.92,
+    "stop_type": "trailing",
+    "reasoning": "Below breakout support with volume confirmation"
+  },
+  "option_idea": {
+    "option_type": "CALL",
+    "symbol": "NVDA",
+    "expiry": "2026-03-20",
+    "strike": 510.0,
+    "entry_premium": 28.5,
+    "contracts": 3,
+    "greeks": {
+      "delta": 0.62,
+      "gamma": 0.018,
+      "theta": -0.42,
+      "vega": 0.95,
+      "rho": 0.35
+    },
+    "implied_volatility": 0.45,
+    "option_targets": [
+      {
+        "premium": 42.0,
+        "confidence": 0.8,
+        "profit_percentage": 47.4,
+        "underlying_price": 525.0
+      },
+      {
+        "premium": 58.5,
+        "confidence": 0.6,
+        "profit_percentage": 105.3,
+        "underlying_price": 550.0
+      },
+      {
+        "premium": 78.0,
+        "confidence": 0.4,
+        "profit_percentage": 173.7,
+        "underlying_price": 580.0
+      }
+    ],
+    "stop_loss_premium": 18.0,
+    "max_loss_dollars": 3150.0,
+    "reasoning": "High delta calls to leverage upside with defined risk. Strong momentum play."
+  },
+  "timeframe": "1-2 months",
+  "risk_reward_ratio": 4.2,
+  "catalysts": [
+    "Q4 earnings in 2 weeks - expecting beat",
+    "New AI chip announcement",
+    "Major cloud provider partnerships",
+    "Analyst upgrades from 3 major firms"
+  ],
+  "risks": [
+    "Semiconductor sector rotation",
+    "China export restrictions",
+    "Profit taking after strong run",
+    "High valuation concerns"
+  ],
+  "reasoning": "\n        NVDA showing exceptional strength with bullish technical setup:\n        - Breakout above 490 resistance on strong volume\n        - RSI at 68 showing momentum without overbought\n        - MACD crossover confirming trend\n        - 50-day MA providing strong support at 475\n        \n        Fundamental catalysts aligned:\n        - Q4 earnings expected to beat by 8-12%\n        - AI chip demand accelerating across cloud providers\n        - Gross margins expanding to 75%+\n        \n        Options strategy provides 4:1 risk/reward with defined downside.\n        Target 1 offers conservative 47% gain, Target 3 gives 174% upside.\n        ",
+  "indicators_used": [
+    "RSI",
+    "MACD",
+    "Volume Profile",
+    "Moving Averages",
+    "Fibonacci"
+  ],
+  "timestamp": "2026-01-14T18:12:58.223451",
+  "analyst": "AI Trading Intelligence v1.0"
+}

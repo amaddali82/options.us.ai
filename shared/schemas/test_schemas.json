@@ -1,0 +1,1187 @@
+{
+  "Recommendation": {
+    "$defs": {
+      "Greeks": {
+        "description": "Option Greeks for risk assessment",
+        "example": {
+          "delta": 0.65,
+          "gamma": 0.025,
+          "rho": 0.08,
+          "theta": -0.05,
+          "vega": 0.18
+        },
+        "properties": {
+          "delta": {
+            "description": "Delta: rate of change of option price with respect to underlying",
+            "maximum": 1.0,
+            "minimum": -1.0,
+            "title": "Delta",
+            "type": "number"
+          },
+          "gamma": {
+            "anyOf": [
+              {
+                "minimum": 0.0,
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "Gamma: rate of change of delta",
+            "title": "Gamma"
+          },
+          "theta": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "Theta: time decay per day",
+            "title": "Theta"
+          },
+          "vega": {
+            "anyOf": [
+              {
+                "minimum": 0.0,
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "Vega: sensitivity to volatility changes",
+            "title": "Vega"
+          },
+          "rho": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "Rho: sensitivity to interest rate changes",
+            "title": "Rho"
+          }
+        },
+        "required": [
+          "delta"
+        ],
+        "title": "Greeks",
+        "type": "object"
+      },
+      "OptionIdea": {
+        "description": "Options trading idea with detailed specifications\nMust include 1-3 option targets",
+        "example": {
+          "contracts": 2,
+          "entry_premium": 5.8,
+          "expiry": "2026-02-20",
+          "greeks": {
+            "delta": 0.65,
+            "gamma": 0.025,
+            "theta": -0.05,
+            "vega": 0.18
+          },
+          "implied_volatility": 0.32,
+          "option_targets": [
+            {
+              "confidence": 0.75,
+              "premium": 8.5
+            },
+            {
+              "confidence": 0.55,
+              "premium": 11.2
+            },
+            {
+              "confidence": 0.35,
+              "premium": 14.8
+            }
+          ],
+          "option_type": "CALL",
+          "reasoning": "Bullish setup with strong technical momentum",
+          "stop_loss_premium": 4.2,
+          "strike": 180.0,
+          "symbol": "AAPL"
+        },
+        "properties": {
+          "option_type": {
+            "$ref": "#/$defs/OptionType",
+            "description": "Type of option: CALL or PUT"
+          },
+          "symbol": {
+            "description": "Underlying symbol (e.g., AAPL, SPY)",
+            "maxLength": 10,
+            "minLength": 1,
+            "title": "Symbol",
+            "type": "string"
+          },
+          "expiry": {
+            "description": "Option expiration date (YYYY-MM-DD)",
+            "format": "date",
+            "title": "Expiry",
+            "type": "string"
+          },
+          "strike": {
+            "description": "Strike price",
+            "exclusiveMinimum": 0,
+            "title": "Strike",
+            "type": "number"
+          },
+          "entry_premium": {
+            "description": "Recommended entry premium (price per contract)",
+            "exclusiveMinimum": 0,
+            "title": "Entry Premium",
+            "type": "number"
+          },
+          "contracts": {
+            "anyOf": [
+              {
+                "exclusiveMinimum": 0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": 1,
+            "description": "Suggested number of contracts",
+            "title": "Contracts"
+          },
+          "greeks": {
+            "$ref": "#/$defs/Greeks",
+            "description": "Option Greeks at entry"
+          },
+          "implied_volatility": {
+            "description": "Implied volatility (as decimal, e.g., 0.35 for 35%)",
+            "exclusiveMinimum": 0,
+            "maximum": 5.0,
+            "title": "Implied Volatility",
+            "type": "number"
+          },
+          "option_targets": {
+            "description": "1-3 premium targets with confidence levels",
+            "items": {
+              "$ref": "#/$defs/OptionTarget"
+            },
+            "maxItems": 3,
+            "minItems": 1,
+            "title": "Option Targets",
+            "type": "array"
+          },
+          "stop_loss_premium": {
+            "anyOf": [
+              {
+                "exclusiveMinimum": 0,
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "Stop loss at this premium level",
+            "title": "Stop Loss Premium"
+          },
+          "max_loss_dollars": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "Maximum loss in dollars for risk management",
+            "title": "Max Loss Dollars"
+          },
+          "reasoning": {
+            "anyOf": [
+              {
+                "maxLength": 1000,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "Detailed reasoning for this option trade",
+            "title": "Reasoning"
+          }
+        },
+        "required": [
+          "option_type",
+          "symbol",
+          "expiry",
+          "strike",
+          "entry_premium",
+          "greeks",
+          "implied_volatility",
+          "option_targets"
+        ],
+        "title": "OptionIdea",
+        "type": "object"
+      },
+      "OptionTarget": {
+        "description": "Premium target for options with confidence level",
+        "example": {
+          "confidence": 0.7,
+          "premium": 8.5,
+          "profit_percentage": 45.5,
+          "underlying_price": 182.0
+        },
+        "properties": {
+          "premium": {
+            "description": "Target option premium (price per contract)",
+            "exclusiveMinimum": 0,
+            "title": "Premium",
+            "type": "number"
+          },
+          "confidence": {
+            "description": "Confidence in reaching this premium target (0.0 to 1.0)",
+            "maximum": 1.0,
+            "minimum": 0.0,
+            "title": "Confidence",
+            "type": "number"
+          },
+          "profit_percentage": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "Expected profit percentage at this target",
+            "title": "Profit Percentage"
+          },
+          "underlying_price": {
+            "anyOf": [
+              {
+                "exclusiveMinimum": 0,
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "Expected underlying price at this premium target",
+            "title": "Underlying Price"
+          }
+        },
+        "required": [
+          "premium",
+          "confidence"
+        ],
+        "title": "OptionTarget",
+        "type": "object"
+      },
+      "OptionType": {
+        "description": "Option type: Call or Put",
+        "enum": [
+          "CALL",
+          "PUT"
+        ],
+        "title": "OptionType",
+        "type": "string"
+      },
+      "Stop": {
+        "description": "Stop-loss level with confidence",
+        "example": {
+          "confidence": 0.85,
+          "price": 165.0,
+          "reasoning": "Below key support with high volume",
+          "stop_type": "hard"
+        },
+        "properties": {
+          "price": {
+            "description": "Stop-loss price level",
+            "exclusiveMinimum": 0,
+            "title": "Price",
+            "type": "number"
+          },
+          "confidence": {
+            "description": "Confidence in stop level holding (0.0 to 1.0)",
+            "maximum": 1.0,
+            "minimum": 0.0,
+            "title": "Confidence",
+            "type": "number"
+          },
+          "stop_type": {
+            "default": "hard",
+            "description": "Type of stop: hard (automatic), trailing (dynamic), or mental",
+            "enum": [
+              "hard",
+              "trailing",
+              "mental"
+            ],
+            "title": "Stop Type",
+            "type": "string"
+          },
+          "reasoning": {
+            "anyOf": [
+              {
+                "maxLength": 300,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "Reason for this stop level",
+            "title": "Reasoning"
+          }
+        },
+        "required": [
+          "price",
+          "confidence"
+        ],
+        "title": "Stop",
+        "type": "object"
+      },
+      "Target": {
+        "description": "Price target for underlying asset with confidence level\nPart of a multi-target ladder strategy",
+        "example": {
+          "confidence": 0.75,
+          "price": 185.5,
+          "reasoning": "Strong support at this level with bullish momentum",
+          "timeframe_days": 30
+        },
+        "properties": {
+          "price": {
+            "description": "Target price for the underlying asset",
+            "exclusiveMinimum": 0,
+            "title": "Price",
+            "type": "number"
+          },
+          "confidence": {
+            "description": "Confidence level for reaching this target (0.0 to 1.0)",
+            "maximum": 1.0,
+            "minimum": 0.0,
+            "title": "Confidence",
+            "type": "number"
+          },
+          "timeframe_days": {
+            "anyOf": [
+              {
+                "exclusiveMinimum": 0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "Expected timeframe to reach target in days",
+            "title": "Timeframe Days"
+          },
+          "reasoning": {
+            "anyOf": [
+              {
+                "maxLength": 500,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "Brief explanation for this target level",
+            "title": "Reasoning"
+          }
+        },
+        "required": [
+          "price",
+          "confidence"
+        ],
+        "title": "Target",
+        "type": "object"
+      }
+    },
+    "description": "Complete trading recommendation with multi-target ladder\nCan include optional options strategy",
+    "example": {
+      "analyst": "AI Trading System v1.0",
+      "confidence_overall": 0.82,
+      "current_price": 175.5,
+      "entry_price": 176.0,
+      "reasoning": "Strong bullish momentum with positive technical setup",
+      "recommendation_type": "BUY",
+      "risk_reward_ratio": 3.5,
+      "stop_loss": {
+        "confidence": 0.9,
+        "price": 168.0,
+        "stop_type": "hard"
+      },
+      "symbol": "AAPL",
+      "targets": [
+        {
+          "confidence": 0.85,
+          "price": 182.0,
+          "timeframe_days": 15
+        },
+        {
+          "confidence": 0.7,
+          "price": 188.5,
+          "timeframe_days": 30
+        },
+        {
+          "confidence": 0.55,
+          "price": 195.0,
+          "timeframe_days": 45
+        }
+      ],
+      "timeframe": "1-2 months"
+    },
+    "properties": {
+      "symbol": {
+        "description": "Primary underlying symbol",
+        "maxLength": 10,
+        "minLength": 1,
+        "title": "Symbol",
+        "type": "string"
+      },
+      "recommendation_type": {
+        "description": "Primary recommendation action",
+        "enum": [
+          "BUY",
+          "SELL",
+          "HOLD"
+        ],
+        "title": "Recommendation Type",
+        "type": "string"
+      },
+      "confidence_overall": {
+        "description": "Overall confidence in this recommendation (0.0 to 1.0)",
+        "maximum": 1.0,
+        "minimum": 0.0,
+        "title": "Confidence Overall",
+        "type": "number"
+      },
+      "current_price": {
+        "description": "Current price of the underlying asset",
+        "exclusiveMinimum": 0,
+        "title": "Current Price",
+        "type": "number"
+      },
+      "entry_price": {
+        "anyOf": [
+          {
+            "exclusiveMinimum": 0,
+            "type": "number"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "default": null,
+        "description": "Recommended entry price for underlying (if different from current)",
+        "title": "Entry Price"
+      },
+      "targets": {
+        "description": "1-5 price targets forming a ladder strategy",
+        "items": {
+          "$ref": "#/$defs/Target"
+        },
+        "maxItems": 5,
+        "minItems": 1,
+        "title": "Targets",
+        "type": "array"
+      },
+      "stop_loss": {
+        "anyOf": [
+          {
+            "$ref": "#/$defs/Stop"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "default": null,
+        "description": "Stop-loss configuration"
+      },
+      "option_idea": {
+        "anyOf": [
+          {
+            "$ref": "#/$defs/OptionIdea"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "default": null,
+        "description": "Optional options strategy for this recommendation"
+      },
+      "timeframe": {
+        "anyOf": [
+          {
+            "type": "string"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "default": null,
+        "description": "Overall timeframe for the trade (e.g., '1-3 months', 'swing', 'day')",
+        "title": "Timeframe"
+      },
+      "risk_reward_ratio": {
+        "anyOf": [
+          {
+            "exclusiveMinimum": 0,
+            "type": "number"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "default": null,
+        "description": "Risk/reward ratio for the trade",
+        "title": "Risk Reward Ratio"
+      },
+      "catalysts": {
+        "anyOf": [
+          {
+            "items": {
+              "type": "string"
+            },
+            "maxItems": 10,
+            "type": "array"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "description": "Key catalysts or events supporting this recommendation",
+        "title": "Catalysts"
+      },
+      "risks": {
+        "anyOf": [
+          {
+            "items": {
+              "type": "string"
+            },
+            "maxItems": 10,
+            "type": "array"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "description": "Key risks to monitor",
+        "title": "Risks"
+      },
+      "reasoning": {
+        "description": "Comprehensive reasoning for this recommendation",
+        "maxLength": 2000,
+        "minLength": 10,
+        "title": "Reasoning",
+        "type": "string"
+      },
+      "indicators_used": {
+        "anyOf": [
+          {
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "description": "Technical indicators used in analysis",
+        "title": "Indicators Used"
+      },
+      "timestamp": {
+        "description": "Timestamp when recommendation was generated",
+        "format": "date-time",
+        "title": "Timestamp",
+        "type": "string"
+      },
+      "analyst": {
+        "anyOf": [
+          {
+            "type": "string"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "default": null,
+        "description": "Analyst or system that generated this recommendation",
+        "title": "Analyst"
+      }
+    },
+    "required": [
+      "symbol",
+      "recommendation_type",
+      "confidence_overall",
+      "current_price",
+      "targets",
+      "reasoning"
+    ],
+    "title": "Recommendation",
+    "type": "object"
+  },
+  "Target": {
+    "description": "Price target for underlying asset with confidence level\nPart of a multi-target ladder strategy",
+    "example": {
+      "confidence": 0.75,
+      "price": 185.5,
+      "reasoning": "Strong support at this level with bullish momentum",
+      "timeframe_days": 30
+    },
+    "properties": {
+      "price": {
+        "description": "Target price for the underlying asset",
+        "exclusiveMinimum": 0,
+        "title": "Price",
+        "type": "number"
+      },
+      "confidence": {
+        "description": "Confidence level for reaching this target (0.0 to 1.0)",
+        "maximum": 1.0,
+        "minimum": 0.0,
+        "title": "Confidence",
+        "type": "number"
+      },
+      "timeframe_days": {
+        "anyOf": [
+          {
+            "exclusiveMinimum": 0,
+            "type": "integer"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "default": null,
+        "description": "Expected timeframe to reach target in days",
+        "title": "Timeframe Days"
+      },
+      "reasoning": {
+        "anyOf": [
+          {
+            "maxLength": 500,
+            "type": "string"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "default": null,
+        "description": "Brief explanation for this target level",
+        "title": "Reasoning"
+      }
+    },
+    "required": [
+      "price",
+      "confidence"
+    ],
+    "title": "Target",
+    "type": "object"
+  },
+  "Stop": {
+    "description": "Stop-loss level with confidence",
+    "example": {
+      "confidence": 0.85,
+      "price": 165.0,
+      "reasoning": "Below key support with high volume",
+      "stop_type": "hard"
+    },
+    "properties": {
+      "price": {
+        "description": "Stop-loss price level",
+        "exclusiveMinimum": 0,
+        "title": "Price",
+        "type": "number"
+      },
+      "confidence": {
+        "description": "Confidence in stop level holding (0.0 to 1.0)",
+        "maximum": 1.0,
+        "minimum": 0.0,
+        "title": "Confidence",
+        "type": "number"
+      },
+      "stop_type": {
+        "default": "hard",
+        "description": "Type of stop: hard (automatic), trailing (dynamic), or mental",
+        "enum": [
+          "hard",
+          "trailing",
+          "mental"
+        ],
+        "title": "Stop Type",
+        "type": "string"
+      },
+      "reasoning": {
+        "anyOf": [
+          {
+            "maxLength": 300,
+            "type": "string"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "default": null,
+        "description": "Reason for this stop level",
+        "title": "Reasoning"
+      }
+    },
+    "required": [
+      "price",
+      "confidence"
+    ],
+    "title": "Stop",
+    "type": "object"
+  },
+  "OptionIdea": {
+    "$defs": {
+      "Greeks": {
+        "description": "Option Greeks for risk assessment",
+        "example": {
+          "delta": 0.65,
+          "gamma": 0.025,
+          "rho": 0.08,
+          "theta": -0.05,
+          "vega": 0.18
+        },
+        "properties": {
+          "delta": {
+            "description": "Delta: rate of change of option price with respect to underlying",
+            "maximum": 1.0,
+            "minimum": -1.0,
+            "title": "Delta",
+            "type": "number"
+          },
+          "gamma": {
+            "anyOf": [
+              {
+                "minimum": 0.0,
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "Gamma: rate of change of delta",
+            "title": "Gamma"
+          },
+          "theta": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "Theta: time decay per day",
+            "title": "Theta"
+          },
+          "vega": {
+            "anyOf": [
+              {
+                "minimum": 0.0,
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "Vega: sensitivity to volatility changes",
+            "title": "Vega"
+          },
+          "rho": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "Rho: sensitivity to interest rate changes",
+            "title": "Rho"
+          }
+        },
+        "required": [
+          "delta"
+        ],
+        "title": "Greeks",
+        "type": "object"
+      },
+      "OptionTarget": {
+        "description": "Premium target for options with confidence level",
+        "example": {
+          "confidence": 0.7,
+          "premium": 8.5,
+          "profit_percentage": 45.5,
+          "underlying_price": 182.0
+        },
+        "properties": {
+          "premium": {
+            "description": "Target option premium (price per contract)",
+            "exclusiveMinimum": 0,
+            "title": "Premium",
+            "type": "number"
+          },
+          "confidence": {
+            "description": "Confidence in reaching this premium target (0.0 to 1.0)",
+            "maximum": 1.0,
+            "minimum": 0.0,
+            "title": "Confidence",
+            "type": "number"
+          },
+          "profit_percentage": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "Expected profit percentage at this target",
+            "title": "Profit Percentage"
+          },
+          "underlying_price": {
+            "anyOf": [
+              {
+                "exclusiveMinimum": 0,
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "Expected underlying price at this premium target",
+            "title": "Underlying Price"
+          }
+        },
+        "required": [
+          "premium",
+          "confidence"
+        ],
+        "title": "OptionTarget",
+        "type": "object"
+      },
+      "OptionType": {
+        "description": "Option type: Call or Put",
+        "enum": [
+          "CALL",
+          "PUT"
+        ],
+        "title": "OptionType",
+        "type": "string"
+      }
+    },
+    "description": "Options trading idea with detailed specifications\nMust include 1-3 option targets",
+    "example": {
+      "contracts": 2,
+      "entry_premium": 5.8,
+      "expiry": "2026-02-20",
+      "greeks": {
+        "delta": 0.65,
+        "gamma": 0.025,
+        "theta": -0.05,
+        "vega": 0.18
+      },
+      "implied_volatility": 0.32,
+      "option_targets": [
+        {
+          "confidence": 0.75,
+          "premium": 8.5
+        },
+        {
+          "confidence": 0.55,
+          "premium": 11.2
+        },
+        {
+          "confidence": 0.35,
+          "premium": 14.8
+        }
+      ],
+      "option_type": "CALL",
+      "reasoning": "Bullish setup with strong technical momentum",
+      "stop_loss_premium": 4.2,
+      "strike": 180.0,
+      "symbol": "AAPL"
+    },
+    "properties": {
+      "option_type": {
+        "$ref": "#/$defs/OptionType",
+        "description": "Type of option: CALL or PUT"
+      },
+      "symbol": {
+        "description": "Underlying symbol (e.g., AAPL, SPY)",
+        "maxLength": 10,
+        "minLength": 1,
+        "title": "Symbol",
+        "type": "string"
+      },
+      "expiry": {
+        "description": "Option expiration date (YYYY-MM-DD)",
+        "format": "date",
+        "title": "Expiry",
+        "type": "string"
+      },
+      "strike": {
+        "description": "Strike price",
+        "exclusiveMinimum": 0,
+        "title": "Strike",
+        "type": "number"
+      },
+      "entry_premium": {
+        "description": "Recommended entry premium (price per contract)",
+        "exclusiveMinimum": 0,
+        "title": "Entry Premium",
+        "type": "number"
+      },
+      "contracts": {
+        "anyOf": [
+          {
+            "exclusiveMinimum": 0,
+            "type": "integer"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "default": 1,
+        "description": "Suggested number of contracts",
+        "title": "Contracts"
+      },
+      "greeks": {
+        "$ref": "#/$defs/Greeks",
+        "description": "Option Greeks at entry"
+      },
+      "implied_volatility": {
+        "description": "Implied volatility (as decimal, e.g., 0.35 for 35%)",
+        "exclusiveMinimum": 0,
+        "maximum": 5.0,
+        "title": "Implied Volatility",
+        "type": "number"
+      },
+      "option_targets": {
+        "description": "1-3 premium targets with confidence levels",
+        "items": {
+          "$ref": "#/$defs/OptionTarget"
+        },
+        "maxItems": 3,
+        "minItems": 1,
+        "title": "Option Targets",
+        "type": "array"
+      },
+      "stop_loss_premium": {
+        "anyOf": [
+          {
+            "exclusiveMinimum": 0,
+            "type": "number"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "default": null,
+        "description": "Stop loss at this premium level",
+        "title": "Stop Loss Premium"
+      },
+      "max_loss_dollars": {
+        "anyOf": [
+          {
+            "type": "number"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "default": null,
+        "description": "Maximum loss in dollars for risk management",
+        "title": "Max Loss Dollars"
+      },
+      "reasoning": {
+        "anyOf": [
+          {
+            "maxLength": 1000,
+            "type": "string"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "default": null,
+        "description": "Detailed reasoning for this option trade",
+        "title": "Reasoning"
+      }
+    },
+    "required": [
+      "option_type",
+      "symbol",
+      "expiry",
+      "strike",
+      "entry_premium",
+      "greeks",
+      "implied_volatility",
+      "option_targets"
+    ],
+    "title": "OptionIdea",
+    "type": "object"
+  },
+  "OptionTarget": {
+    "description": "Premium target for options with confidence level",
+    "example": {
+      "confidence": 0.7,
+      "premium": 8.5,
+      "profit_percentage": 45.5,
+      "underlying_price": 182.0
+    },
+    "properties": {
+      "premium": {
+        "description": "Target option premium (price per contract)",
+        "exclusiveMinimum": 0,
+        "title": "Premium",
+        "type": "number"
+      },
+      "confidence": {
+        "description": "Confidence in reaching this premium target (0.0 to 1.0)",
+        "maximum": 1.0,
+        "minimum": 0.0,
+        "title": "Confidence",
+        "type": "number"
+      },
+      "profit_percentage": {
+        "anyOf": [
+          {
+            "type": "number"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "default": null,
+        "description": "Expected profit percentage at this target",
+        "title": "Profit Percentage"
+      },
+      "underlying_price": {
+        "anyOf": [
+          {
+            "exclusiveMinimum": 0,
+            "type": "number"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "default": null,
+        "description": "Expected underlying price at this premium target",
+        "title": "Underlying Price"
+      }
+    },
+    "required": [
+      "premium",
+      "confidence"
+    ],
+    "title": "OptionTarget",
+    "type": "object"
+  },
+  "Greeks": {
+    "description": "Option Greeks for risk assessment",
+    "example": {
+      "delta": 0.65,
+      "gamma": 0.025,
+      "rho": 0.08,
+      "theta": -0.05,
+      "vega": 0.18
+    },
+    "properties": {
+      "delta": {
+        "description": "Delta: rate of change of option price with respect to underlying",
+        "maximum": 1.0,
+        "minimum": -1.0,
+        "title": "Delta",
+        "type": "number"
+      },
+      "gamma": {
+        "anyOf": [
+          {
+            "minimum": 0.0,
+            "type": "number"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "default": null,
+        "description": "Gamma: rate of change of delta",
+        "title": "Gamma"
+      },
+      "theta": {
+        "anyOf": [
+          {
+            "type": "number"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "default": null,
+        "description": "Theta: time decay per day",
+        "title": "Theta"
+      },
+      "vega": {
+        "anyOf": [
+          {
+            "minimum": 0.0,
+            "type": "number"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "default": null,
+        "description": "Vega: sensitivity to volatility changes",
+        "title": "Vega"
+      },
+      "rho": {
+        "anyOf": [
+          {
+            "type": "number"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "default": null,
+        "description": "Rho: sensitivity to interest rate changes",
+        "title": "Rho"
+      }
+    },
+    "required": [
+      "delta"
+    ],
+    "title": "Greeks",
+    "type": "object"
+  }
+}

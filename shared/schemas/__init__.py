@@ -12,7 +12,21 @@ from .trading_schemas import (
     ErrorResponse,
 )
 
+from .recommendation import (
+    Recommendation,
+    Target,
+    Stop,
+    OptionIdea,
+    OptionTarget,
+    Greeks,
+    OptionType,
+    get_recommendation_schema,
+    get_all_schemas,
+    export_schemas_to_file,
+)
+
 __all__ = [
+    # Trading schemas
     "RecommendationType",
     "Timeframe",
     "IndicatorType",
@@ -20,4 +34,16 @@ __all__ = [
     "RecommendationResponse",
     "HealthResponse",
     "ErrorResponse",
+    # Recommendation models
+    "Recommendation",
+    "Target",
+    "Stop",
+    "OptionIdea",
+    "OptionTarget",
+    "Greeks",
+    "OptionType",
+    # Helper functions
+    "get_recommendation_schema",
+    "get_all_schemas",
+    "export_schemas_to_file",
 ]

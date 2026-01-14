@@ -18,5 +18,5 @@ COPY . .
 # Expose port
 EXPOSE 8000
 
-# Run the application
-CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000", "--reload"]
+# Run migrations and then start the application
+CMD python run_migrations.py && uvicorn main:app --host 0.0.0.0 --port 8000 --reload

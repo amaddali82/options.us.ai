@@ -13,7 +13,6 @@ services:
       - "5432:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
-      - ./infra/init.sql:/docker-entrypoint-initdb.d/init.sql
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U trading_user -d trading_db"]
       interval: 10s
@@ -25,7 +24,7 @@ services:
   # FastAPI Inference API
   inference_api:
     build:
-      context: ./services/inference_api
+      context: ../services/inference_api
       dockerfile: Dockerfile
     container_name: trading_inference_api
     environment:
@@ -37,8 +36,9 @@ services:
     ports:
       - "8000:8000"
     volumes:
-      - ./services/inference_api:/app
-      - ./shared:/app/shared
+      - ../services/inference_api:/app
+      - ../shared:/app/shared
+      - ../db:/app/db
     depends_on:
       postgres:
         condition: service_healthy
@@ -49,7 +49,7 @@ services:
   # React UI
   ui:
     build:
-      context: ./services/ui
+      context: ../services/ui
       dockerfile: Dockerfile
     container_name: trading_ui
     environment:
@@ -57,7 +57,7 @@ services:
     ports:
       - "5173:5173"
     volumes:
-      - ./services/ui:/app
+      - ../services/ui:/app
       - /app/node_modules
     depends_on:
       - inference_api

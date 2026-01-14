@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import type { FiltersState } from './types'
+import type { FiltersState } from '../types'
 import HealthIndicator from './HealthIndicator'
 
 interface FiltersBarProps {

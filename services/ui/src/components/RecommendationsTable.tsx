@@ -1,6 +1,5 @@
-import { useMemo } from 'react'
 import { FixedSizeList as List } from 'react-window'
-import type { RecommendationListItem } from './types'
+import type { RecommendationListItem } from '../types'
 
 interface RecommendationsTableProps {
   recommendations: RecommendationListItem[]
@@ -54,15 +53,6 @@ export default function RecommendationsTable({
     return `${opt.option_type} ${opt.strike.toFixed(2)} ${new Date(opt.expiry).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: '2-digit' })}`
   }
 
-  const formatDate = (isoDate: string) => {
-    const date = new Date(isoDate)
-    return date.toLocaleString('en-US', {
-      month: 'short',
-      day: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit',
-    })
-  }
 
   const Row = ({ reco }: { reco: RecommendationListItem }) => (
     <tr

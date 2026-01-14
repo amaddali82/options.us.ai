@@ -42,6 +42,7 @@ export interface RecommendationDetail {
   horizon: 'intraday' | 'swing' | 'position'
   side: 'BUY' | 'SELL' | 'HOLD'
   entry_price: number  // > 0
+  stop_price: number | null  // Stop loss price
   confidence_overall: number  // 0.0 to 1.0
   expected_move_pct: number | null
   rank: number

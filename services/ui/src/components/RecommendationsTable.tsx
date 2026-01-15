@@ -14,32 +14,6 @@ export default function RecommendationsTable({
 }: RecommendationsTableProps) {
   const useVirtualization = recommendations.length > 200
 
-  const getSideBadgeClass = (side: string) => {
-    switch (side) {
-      case 'BUY':
-        return 'pill pill-buy'
-      case 'SELL':
-        return 'pill pill-sell'
-      case 'HOLD':
-        return 'pill pill-hold'
-      default:
-        return 'pill'
-    }
-  }
-
-  const getHorizonBadgeClass = (horizon: string) => {
-    switch (horizon) {
-      case 'intraday':
-        return 'pill pill-intraday'
-      case 'swing':
-        return 'pill pill-swing'
-      case 'position':
-        return 'pill pill-position'
-      default:
-        return 'pill'
-    }
-  }
-
   const formatPrice = (price: number) => {
     return `$${price.toFixed(2)}`
   }
@@ -48,99 +22,109 @@ export default function RecommendationsTable({
     return `${(value * 100).toFixed(1)}%`
   }
 
-  const formatOptionSummary = (opt: any) => {
-    if (!opt) return '—'
-    return `${opt.option_type} ${opt.strike.toFixed(2)} ${new Date(opt.expiry).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: '2-digit' })}`
+
+const Row = ({ reco }: { reco: RecommendationListItem }) => {
+    const opt = reco.option_summary
+    if (!opt) return null
+
+    const optTarget1 = opt.option_targets?.[0]
+    const optTarget2 = opt.option_targets?.[1]
+
+    return (
+      <tr
+        onClick={() => onRowClick(reco)}
+        className="hover:bg-gray-50 cursor-pointer transition-colors border-b border-gray-100 last:border-b-0"
+      >
+        {/* Symbol */}
+        <td className="px-4 py-3">
+          <span className="font-semibold text-gray-900">{reco.symbol}</span>
+        </td>
+
+        {/* Option Type */}
+        <td className="px-4 py-3">
+          <span className="pill pill-buy font-semibold">{opt.option_type}</span>
+        </td>
+
+        {/* Strike Price */}
+        <td className="px-4 py-3 text-gray-900 font-mono text-sm font-semibold">
+          {formatPrice(opt.strike)}
+        </td>
+
+        {/* Expiry Date */}
+        <td className="px-4 py-3 text-gray-700 text-sm">
+          {new Date(opt.expiry).toLocaleDateString('en-US', {
+            month: 'short',
+            day: 'numeric',
+            year: 'numeric'
+          })}
+        </td>
+
+        {/* Premium */}
+        <td className="px-4 py-3">
+          {reco.option_summary?.option_entry_price ? (
+            <span className="font-mono text-sm text-blue-600 font-semibold">
+              ${reco.option_summary.option_entry_price.toFixed(2)}
+            </span>
+          ) : (
+            <span className="text-gray-400">—</span>
+          )}
+        </td>
+
+        {/* Target 1 */}
+        <td className="px-4 py-3">
+          {optTarget1 ? (
+            <div className="flex flex-col">
+              <span className="font-mono text-sm text-green-700 font-semibold">
+                ${optTarget1.value.toFixed(2)}
+              </span>
+            </div>
+          ) : (
+            <span className="text-gray-400">—</span>
+          )}
+        </td>
+
+        {/* Target 1 Confidence */}
+        <td className="px-4 py-3">
+          {optTarget1 ? (
+            <span className="text-sm text-gray-700 font-medium">
+              {formatPercent(optTarget1.confidence)}
+            </span>
+          ) : (
+            <span className="text-gray-400">—</span>
+          )}
+        </td>
+
+        {/* Target 2 */}
+        <td className="px-4 py-3">
+          {optTarget2 ? (
+            <div className="flex flex-col">
+              <span className="font-mono text-sm text-green-700 font-semibold">
+                ${optTarget2.value.toFixed(2)}
+              </span>
+            </div>
+          ) : (
+            <span className="text-gray-400">—</span>
+          )}
+        </td>
+
+        {/* Target 2 Confidence */}
+        <td className="px-4 py-3">
+          {optTarget2 ? (
+            <span className="text-sm text-gray-700 font-medium">
+              {formatPercent(optTarget2.confidence)}
+            </span>
+          ) : (
+            <span className="text-gray-400">—</span>
+          )}
+        </td>
+
+        {/* Stock Entry Price (reference) */}
+        <td className="px-4 py-3 text-gray-600 font-mono text-xs">
+          {formatPrice(reco.entry_price)}
+        </td>
+      </tr>
+    )
   }
-
-
-  const Row = ({ reco }: { reco: RecommendationListItem }) => (
-    <tr
-      onClick={() => onRowClick(reco)}
-      className="hover:bg-gray-50 cursor-pointer transition-colors border-b border-gray-100 last:border-b-0"
-    >
-      {/* Symbol */}
-      <td className="px-4 py-3">
-        <span className="font-semibold text-gray-900">{reco.symbol}</span>
-      </td>
-
-      {/* Side */}
-      <td className="px-4 py-3">
-        <span className={getSideBadgeClass(reco.side)}>{reco.side}</span>
-      </td>
-
-      {/* Horizon */}
-      <td className="px-4 py-3">
-        <span className={getHorizonBadgeClass(reco.horizon)}>
-          {reco.horizon}
-        </span>
-      </td>
-
-      {/* Conf */}
-      <td className="px-4 py-3 font-mono text-sm">
-        {formatPercent(reco.confidence_overall)}
-      </td>
-
-      {/* Entry */}
-      <td className="px-4 py-3 text-gray-900 font-mono text-sm">
-        {formatPrice(reco.entry_price)}
-      </td>
-
-      {/* TP1 (Conf) */}
-      <td className="px-4 py-3">
-        {reco.tp1 ? (
-          <div className="flex flex-col">
-            <span className="font-mono text-sm text-gray-900">
-              {formatPrice(reco.tp1.value)}
-            </span>
-            <span className="text-xs text-gray-500">
-              ({formatPercent(reco.tp1.confidence)})
-            </span>
-          </div>
-        ) : (
-          <span className="text-gray-400">—</span>
-        )}
-      </td>
-
-      {/* TP2 (Conf) */}
-      <td className="px-4 py-3">
-        {reco.tp2 ? (
-          <div className="flex flex-col">
-            <span className="font-mono text-sm text-gray-900">
-              {formatPrice(reco.tp2.value)}
-            </span>
-            <span className="text-xs text-gray-500">
-              ({formatPercent(reco.tp2.confidence)})
-            </span>
-          </div>
-        ) : (
-          <span className="text-gray-400">—</span>
-        )}
-      </td>
-
-      {/* Stop */}
-      <td className="px-4 py-3 text-gray-900 font-mono text-sm">
-        —
-      </td>
-
-      {/* Option (type strike expiry) */}
-      <td className="px-4 py-3">
-        <span className="text-xs text-gray-600">
-          {formatOptionSummary(reco.option_summary)}
-        </span>
-      </td>
-
-      {/* Opt TP1 (Conf) */}
-      <td className="px-4 py-3">
-        <span className="text-gray-400">—</span>
-      </td>
-
-      {/* Opt TP2 (Conf) */}
-      <td className="px-4 py-3">
-        <span className="text-gray-400">—</span>
-      </td>
-    </tr>
-  )
 
   const VirtualizedRow = ({ index, style }: { index: number; style: React.CSSProperties }) => {
     const reco = recommendations[index]
@@ -162,34 +146,31 @@ export default function RecommendationsTable({
           Symbol
         </th>
         <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
-          Side
+          Option Type
         </th>
         <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
-          Horizon
+          Strike Price
         </th>
         <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
-          Conf
+          Expiry Date
         </th>
         <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
-          Entry
+          Premium
         </th>
         <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
-          TP1 (Conf)
+          Target 1
         </th>
         <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
-          TP2 (Conf)
+          Target 1 Conf
         </th>
         <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
-          Stop
+          Target 2
         </th>
         <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
-          Option
+          Target 2 Conf
         </th>
         <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
-          Opt TP1
-        </th>
-        <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
-          Opt TP2
+          Stock Price
         </th>
       </tr>
     </thead>
@@ -206,7 +187,12 @@ export default function RecommendationsTable({
     )
   }
 
-  if (recommendations.length === 0) {
+  // Filter to only show CALL options
+  const callOptionsOnly = recommendations.filter(
+    (reco) => reco.option_summary?.option_type === 'CALL'
+  )
+
+  if (recommendations.length === 0 || callOptionsOnly.length === 0) {
     return (
       <div className="flex items-center justify-center h-96">
         <div className="text-center">
@@ -223,9 +209,11 @@ export default function RecommendationsTable({
               d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
             />
           </svg>
-          <h3 className="mt-2 text-sm font-medium text-gray-900">No recommendations</h3>
+          <h3 className="mt-2 text-sm font-medium text-gray-900">No call options available</h3>
           <p className="mt-1 text-sm text-gray-500">
-            Try adjusting your filters to see more results.
+            {recommendations.length === 0 
+              ? 'Try adjusting your filters to see more results.'
+              : 'No CALL options found in current recommendations.'}
           </p>
         </div>
       </div>
@@ -233,6 +221,11 @@ export default function RecommendationsTable({
   }
 
   if (useVirtualization) {
+    // Filter to only show CALL options
+    const callOptionsOnlyVirt = recommendations.filter(
+      (reco) => reco.option_summary?.option_type === 'CALL'
+    )
+
     return (
       <div className="bg-white">
         <table className="min-w-full divide-y divide-gray-200">
@@ -240,7 +233,7 @@ export default function RecommendationsTable({
         </table>
         <List
           height={600}
-          itemCount={recommendations.length}
+          itemCount={callOptionsOnlyVirt.length}
           itemSize={80}
           width="100%"
         >
@@ -255,7 +248,7 @@ export default function RecommendationsTable({
       <table className="min-w-full divide-y divide-gray-200">
         {tableHeader}
         <tbody className="bg-white divide-y divide-gray-100">
-          {recommendations.map((reco) => (
+          {callOptionsOnly.map((reco) => (
             <Row key={reco.reco_id} reco={reco} />
           ))}
         </tbody>

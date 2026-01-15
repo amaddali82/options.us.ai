@@ -12,7 +12,7 @@ export default function Dashboard() {
     minConfidence: 0,
     symbol: '',
     sort: 'rank',
-    optionsOnly: false,
+    optionsOnly: true,  // Enable options filter by default
   })
 
   const [selectedRecommendation, setSelectedRecommendation] =

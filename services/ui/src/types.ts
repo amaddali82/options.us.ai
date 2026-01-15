@@ -32,6 +32,7 @@ export interface OptionSummary {
   option_type: 'CALL' | 'PUT'
   expiry: string  // ISO date, must be future
   strike: number  // > 0
+  option_entry_price?: number  // Premium price
   option_targets: TargetSummary[]  // Max 2 targets in list view
 }
 

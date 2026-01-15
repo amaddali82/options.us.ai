@@ -24,9 +24,10 @@ class OptionSummary(BaseModel):
     option_type: str = Field(pattern="^(CALL|PUT)$", description="Must be CALL or PUT")
     expiry: date = Field(description="Option expiration date")
     strike: float = Field(gt=0, description="Strike price must be positive")
+    option_entry_price: Optional[float] = Field(None, gt=0, description="Entry premium")
     option_targets: List[TargetSummary] = Field(default_factory=list, max_length=2)
     
-    model_config = ConfigDict(from_attributes=True)
+    model_config = ConfigDict(from_attributes=True, use_enum_values=True)
     
     @field_validator('expiry')
     @classmethod

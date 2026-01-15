@@ -205,11 +205,17 @@ export default function RecommendationDrawer({
                         <div className="text-xl font-bold text-gray-900">
                           {detail.option_idea.option_type} ${detail.option_idea.strike.toFixed(2)}
                         </div>
+                        <div className="text-sm text-blue-600 font-semibold">
+                          Premium: ${detail.option_idea.option_entry_price.toFixed(2)}
+                        </div>
                       </div>
                       <div className="text-right">
                         <div className="text-sm text-gray-600">Expiry</div>
                         <div className="text-base font-semibold text-gray-900">
                           {formatDate(detail.option_idea.expiry)}
+                        </div>
+                        <div className="text-xs text-gray-500">
+                          IV: {((detail.option_idea.iv?.iv || 0) * 100).toFixed(1)}%
                         </div>
                       </div>
                     </div>

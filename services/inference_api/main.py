@@ -322,6 +322,7 @@ async def list_recommendations(
                     option_type=opt.option_type,
                     expiry=opt.expiry,
                     strike=float(opt.strike),
+                    option_entry_price=float(opt.option_entry_price) if opt.option_entry_price else None,
                     option_targets=opt_targets
                 )
             

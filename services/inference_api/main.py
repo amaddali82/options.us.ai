@@ -28,6 +28,7 @@ from schemas import (
 from ranking import calculate_rank_from_model
 from reco_generator import generate_batch, SYMBOL_UNIVERSE
 from scheduler import start_scheduler, stop_scheduler, update_stock_prices, update_options_data, get_last_sync_times
+from recalculate_options import recalculate_all_options
 
 # Configure logging
 logging.basicConfig(
@@ -598,6 +599,34 @@ async def refresh_data():
         }
     except Exception as e:
         logger.error(f"Error during manual refresh: {e}")
+
+
+@app.post("/recommendations/recalculate")
+async def recalculate_options_endpoint():
+    """
+    Recalculate all option strikes, premiums, and confidence scores based on current stock prices
+    
+    This endpoint recalculates:
+    - Strike prices based on delta targets
+    - Option premiums using Black-Scholes approximation
+    - ML confidence scores
+    - Profit targets (20% and 50% levels)
+    
+    Updates database tables: option_ideas, option_targets, recommendations
+    """
+    try:
+        logger.info("Option recalculation triggered via API")
+        
+        # Run recalculation
+        await recalculate_all_options()
+        
+        return {
+            "status": "success",
+            "message": "Options recalculated successfully based on current stock prices",
+            "timestamp": datetime.now(timezone.utc).isoformat()
+        }
+    except Exception as e:
+        logger.error(f"Error during option recalculation: {e}")
         raise HTTPException(status_code=500, detail=f"Refresh failed: {str(e)}")
 
 

@@ -12,9 +12,68 @@ import asyncio
 logger = logging.getLogger(__name__)
 
 
+def fetch_single_price_with_retry(symbol: str, max_retries: int = 3) -> Optional[float]:
+    """
+    Fetch a single stock price with retry logic and exponential backoff
+    
+    Args:
+        symbol: Stock symbol to fetch
+        max_retries: Maximum number of retry attempts
+        
+    Returns:
+        Current price or None if all attempts fail
+    """
+    for attempt in range(max_retries):
+        try:
+            ticker = yf.Ticker(symbol)
+            price = None
+            
+            # Method 1: Try history with longer period to get most recent price
+            try:
+                # Get last 5 days to ensure we catch most recent trading day
+                hist = ticker.history(period='5d')
+                if not hist.empty:
+                    # Get the most recent close price
+                    price = hist['Close'].iloc[-1]
+                    if price and price > 0:
+                        return float(price)
+            except Exception as e:
+                logger.debug(f"{symbol} history method failed: {str(e)[:50]}")
+            
+            # Method 2: Fallback to fast_info
+            if not price:
+                try:
+                    if hasattr(ticker, 'fast_info'):
+                        fast_info = ticker.fast_info
+                        price = fast_info.get('lastPrice') or fast_info.get('previousClose')
+                        if price and price > 0:
+                            return float(price)
+                except Exception as e:
+                    logger.debug(f"{symbol} fast_info method failed: {str(e)[:50]}")
+            
+            # Method 3: Fallback to info dict (slower but more reliable)
+            if not price:
+                try:
+                    info = ticker.info
+                    price = info.get('currentPrice') or info.get('regularMarketPrice') or info.get('previousClose')
+                    if price and price > 0:
+                        return float(price)
+                except Exception as e:
+                    logger.debug(f"{symbol} info method failed: {str(e)[:50]}")
+            
+        except Exception as e:
+            logger.warning(f"Attempt {attempt + 1}/{max_retries} failed for {symbol}: {str(e)[:100]}")
+            if attempt < max_retries - 1:
+                # Exponential backoff: 1s, 2s, 4s
+                sleep_time = 2 ** attempt
+                time.sleep(sleep_time)
+    
+    return None
+
+
 def fetch_stock_prices(symbols: List[str], delay: float = 0.5) -> Dict[str, float]:
     """
-    Fetch current stock prices for multiple symbols with rate limiting
+    Fetch current stock prices for multiple symbols with rate limiting and retry logic
     
     Args:
         symbols: List of stock symbols
@@ -25,58 +84,23 @@ def fetch_stock_prices(symbols: List[str], delay: float = 0.5) -> Dict[str, floa
     """
     prices = {}
     
-    # Use batch download for efficiency
-    try:
-        batch_size = 10
-        for i in range(0, len(symbols), batch_size):
-            batch = symbols[i:i+batch_size]
+    # Process symbols individually with retry logic for better reliability
+    for i, symbol in enumerate(symbols):
+        try:
+            price = fetch_single_price_with_retry(symbol, max_retries=3)
             
-            # Download batch
-            tickers = yf.Tickers(' '.join(batch))
-            
-            for symbol in batch:
-                try:
-                    ticker = tickers.tickers.get(symbol)
-                    if not ticker:
-                        continue
-                    
-                    # Try multiple methods to get price
-                    price = None
-                    
-                    # Method 1: Try history with longer period to get most recent price
-                    try:
-                        # Get last 5 days to ensure we catch most recent trading day
-                        hist = ticker.history(period='5d')
-                        if not hist.empty:
-                            # Get the most recent close price
-                            price = hist['Close'].iloc[-1]
-                    except:
-                        pass
-                    
-                    # Method 2: Fallback to fast_info if history fails
-                    if not price:
-                        try:
-                            if hasattr(ticker, 'fast_info'):
-                                fast_info = ticker.fast_info
-                                price = fast_info.get('lastPrice') or fast_info.get('last_price') or fast_info.get('previousClose')
-                        except:
-                            pass
-                    
-                    if price and price > 0:
-                        prices[symbol] = float(price)
-                        logger.info(f"Fetched {symbol}: ${price:.2f}")
-                    else:
-                        logger.warning(f"No price found for {symbol}")
-                        
-                except Exception as e:
-                    logger.error(f"Error fetching {symbol}: {str(e)[:100]}")
-            
-            # Rate limiting delay between batches
-            if i + batch_size < len(symbols):
-                time.sleep(delay)
+            if price:
+                prices[symbol] = price
+                logger.info(f"Fetched {symbol}: ${price:.2f}")
+            else:
+                logger.warning(f"No price found for {symbol} after all retry attempts")
                 
-    except Exception as e:
-        logger.error(f"Batch fetch error: {e}")
+        except Exception as e:
+            logger.error(f"Error fetching {symbol}: {str(e)[:100]}")
+        
+        # Rate limiting delay between symbols
+        if i < len(symbols) - 1:
+            time.sleep(delay)
         
     return prices
 

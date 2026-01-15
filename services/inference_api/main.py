@@ -27,6 +27,7 @@ from schemas import (
 )
 from ranking import calculate_rank_from_model
 from reco_generator import generate_batch, SYMBOL_UNIVERSE
+from scheduler import start_scheduler, stop_scheduler, update_stock_prices, update_options_data
 
 # Configure logging
 logging.basicConfig(
@@ -114,20 +115,25 @@ async def log_requests(request: Request, call_next):
 
 @app.on_event("startup")
 async def startup_event():
-    """Startup event - verify database connection"""
+    """Startup event - verify database connection and start scheduler"""
     try:
         async with engine.begin() as conn:
             await conn.execute(select(1))
         logger.info("Database connection established")
+        
+        # Start background scheduler
+        start_scheduler()
+        logger.info("Background scheduler started")
     except Exception as e:
-        logger.error(f"Failed to connect to database: {e}")
+        logger.error(f"Failed to start services: {e}")
 
 
 @app.on_event("shutdown")
 async def shutdown_event():
     """Shutdown event - cleanup"""
+    stop_scheduler()
     await engine.dispose()
-    logger.info("Database connection closed")
+    logger.info("Database connection closed, scheduler stopped")
 
 
 @app.get("/", response_model=HealthResponse)
@@ -563,6 +569,31 @@ async def seed_recommendations(
         await db.rollback()
         logger.error(f"Error seeding recommendations: {e}")
         raise HTTPException(status_code=500, detail=f"Failed to seed recommendations: {str(e)}")
+
+
+@app.post("/recommendations/refresh")
+async def refresh_data():
+    """
+    Trigger immediate refresh of all stock prices and options data
+    
+    This endpoint manually triggers the scheduled update jobs to fetch
+    real-time prices and recalculate targets immediately.
+    """
+    try:
+        logger.info("Manual refresh triggered via API")
+        
+        # Run both updates
+        await update_stock_prices()
+        await update_options_data()
+        
+        return {
+            "status": "success",
+            "message": "Data refreshed successfully",
+            "timestamp": datetime.now(timezone.utc).isoformat()
+        }
+    except Exception as e:
+        logger.error(f"Error during manual refresh: {e}")
+        raise HTTPException(status_code=500, detail=f"Refresh failed: {str(e)}")
 
 
 @app.get("/status")

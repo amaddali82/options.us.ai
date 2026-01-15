@@ -1,16 +1,26 @@
+import { useState } from 'react'
 import type { RecommendationListItem } from '../types'
 
 interface RecommendationsTableProps {
   recommendations: RecommendationListItem[]
   onRowClick: (reco: RecommendationListItem) => void
   isLoading: boolean
+  favorites: string[]
+  onToggleFavorite: (recoId: string) => void
 }
+
+type SortField = 'symbol' | 'strike' | 'entry_price' | 'expiry' | 'target1' | 'stock_price'
+type SortDirection = 'asc' | 'desc'
 
 export default function RecommendationsTable({
   recommendations,
   onRowClick,
   isLoading,
+  favorites,
+  onToggleFavorite,
 }: RecommendationsTableProps) {
+  const [sortField, setSortField] = useState<SortField>('symbol')
+  const [sortDirection, setSortDirection] = useState<SortDirection>('asc')
 
   const formatPrice = (price: number) => {
     return `$${price.toFixed(2)}`
@@ -28,6 +38,26 @@ export default function RecommendationsTable({
     })
   }
 
+  const handleSort = (field: SortField) => {
+    if (sortField === field) {
+      setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc')
+    } else {
+      setSortField(field)
+      setSortDirection('asc')
+    }
+  }
+
+  const SortIcon = ({ field }: { field: SortField }) => {
+    if (sortField !== field) {
+      return <span className="ml-1 text-gray-300">⇅</span>
+    }
+    return (
+      <span className="ml-1 text-indigo-200">
+        {sortDirection === 'asc' ? '↑' : '↓'}
+      </span>
+    )
+  }
+
   if (isLoading) {
     return (
       <div className="flex items-center justify-center h-96">
@@ -43,6 +73,44 @@ export default function RecommendationsTable({
   const callOptionsOnly = recommendations.filter(
     (reco) => reco.option_summary?.option_type === 'CALL'
   )
+
+  // Sort recommendations
+  const sortedRecommendations = [...callOptionsOnly].sort((a, b) => {
+    let aVal: any, bVal: any
+    
+    switch (sortField) {
+      case 'symbol':
+        aVal = a.symbol
+        bVal = b.symbol
+        break
+      case 'strike':
+        aVal = a.option_summary?.strike || 0
+        bVal = b.option_summary?.strike || 0
+        break
+      case 'entry_price':
+        aVal = a.option_summary?.option_entry_price || 0
+        bVal = b.option_summary?.option_entry_price || 0
+        break
+      case 'expiry':
+        aVal = new Date(a.option_summary?.expiry || 0).getTime()
+        bVal = new Date(b.option_summary?.expiry || 0).getTime()
+        break
+      case 'target1':
+        aVal = a.option_summary?.option_targets?.[0]?.value || 0
+        bVal = b.option_summary?.option_targets?.[0]?.value || 0
+        break
+      case 'stock_price':
+        aVal = a.entry_price
+        bVal = b.entry_price
+        break
+      default:
+        return 0
+    }
+    
+    if (aVal < bVal) return sortDirection === 'asc' ? -1 : 1
+    if (aVal > bVal) return sortDirection === 'asc' ? 1 : -1
+    return 0
+  })
 
   if (recommendations.length === 0 || callOptionsOnly.length === 0) {
     return (
@@ -73,45 +141,80 @@ export default function RecommendationsTable({
   }
 
   return (
-    <div className="bg-white rounded-lg shadow-sm overflow-hidden">
+    <div className="bg-white rounded-xl shadow-lg overflow-hidden border border-gray-200">
       <div className="overflow-x-auto">
-        <table className="min-w-full divide-y divide-gray-100">
-          <thead className="bg-gradient-to-r from-blue-50 to-indigo-50">
+        <table className="w-full table-auto divide-y divide-gray-200">
+          <thead className="bg-gradient-to-r from-slate-700 via-slate-600 to-slate-700">
             <tr>
-              <th className="px-6 py-4 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
-                Symbol
+              <th className="px-6 py-5 text-left text-sm font-bold text-white uppercase tracking-wider">
+                ⭐
               </th>
-              <th className="px-6 py-4 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
-                Option Type
+              <th 
+                onClick={() => handleSort('symbol')}
+                className="px-8 py-5 text-left text-sm font-bold text-white uppercase tracking-wider cursor-pointer hover:bg-slate-600 transition-colors"
+              >
+                <div className="flex items-center">
+                  Symbol <SortIcon field="symbol" />
+                </div>
               </th>
-              <th className="px-6 py-4 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
-                Strike Price
+              <th className="px-8 py-5 text-left text-sm font-bold text-white uppercase tracking-wider">
+                Type
               </th>
-              <th className="px-6 py-4 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
-                Entry Price
+              <th 
+                onClick={() => handleSort('strike')}
+                className="px-8 py-5 text-left text-sm font-bold text-white uppercase tracking-wider cursor-pointer hover:bg-slate-600 transition-colors"
+                title="Strike Price: The fixed price at which you can buy the stock if you exercise the option contract"
+              >
+                <div className="flex items-center">
+                  Strike Price <SortIcon field="strike" />
+                </div>
               </th>
-              <th className="px-6 py-4 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
-                Expiry Date
+              <th 
+                onClick={() => handleSort('entry_price')}
+                className="px-8 py-5 text-left text-sm font-bold text-white uppercase tracking-wider cursor-pointer hover:bg-slate-600 transition-colors"
+              >
+                <div className="flex items-center">
+                  Entry Price <SortIcon field="entry_price" />
+                </div>
               </th>
-              <th className="px-6 py-4 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
-                Target 1
+              <th 
+                onClick={() => handleSort('expiry')}
+                className="px-8 py-5 text-left text-sm font-bold text-white uppercase tracking-wider cursor-pointer hover:bg-slate-600 transition-colors"
+              >
+                <div className="flex items-center">
+                  Expiry Date <SortIcon field="expiry" />
+                </div>
               </th>
-              <th className="px-6 py-4 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
+              <th 
+                onClick={() => handleSort('target1')}
+                className="px-8 py-5 text-left text-sm font-bold text-white uppercase tracking-wider cursor-pointer hover:bg-slate-600 transition-colors"
+              >
+                <div className="flex items-center">
+                  Target 1 <SortIcon field="target1" />
+                </div>
+              </th>
+              <th className="px-8 py-5 text-left text-sm font-bold text-white uppercase tracking-wider">
                 Confidence
               </th>
-              <th className="px-6 py-4 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
+              <th className="px-8 py-5 text-left text-sm font-bold text-white uppercase tracking-wider">
                 Target 2
               </th>
-              <th className="px-6 py-4 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
+              <th className="px-8 py-5 text-left text-sm font-bold text-white uppercase tracking-wider">
                 Confidence
               </th>
-              <th className="px-6 py-4 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
-                Stock Price
+              <th 
+                onClick={() => handleSort('stock_price')}
+                className="px-8 py-5 text-left text-sm font-bold text-white uppercase tracking-wider cursor-pointer hover:bg-slate-600 transition-colors"
+                title="Stock Price: Current market price of the underlying stock"
+              >
+                <div className="flex items-center">
+                  Stock Price <SortIcon field="stock_price" />
+                </div>
               </th>
             </tr>
           </thead>
-          <tbody className="bg-white divide-y divide-gray-50">
-            {callOptionsOnly.map((reco, idx) => {
+          <tbody className="bg-white divide-y divide-gray-100">
+            {sortedRecommendations.map((reco, idx) => {
               const opt = reco.option_summary
               if (!opt) return null
 
@@ -121,34 +224,47 @@ export default function RecommendationsTable({
               return (
                 <tr
                   key={reco.reco_id}
-                  onClick={() => onRowClick(reco)}
-                  className={`hover:bg-blue-50 cursor-pointer transition-colors ${
-                    idx % 2 === 0 ? 'bg-white' : 'bg-gray-50'
+                  className={`hover:bg-slate-100 cursor-pointer transition-all hover:shadow-sm ${
+                    idx % 2 === 0 ? 'bg-white' : 'bg-slate-50'
                   }`}
                 >
+                  {/* Favorite Star */}
+                  <td className="px-6 py-5 whitespace-nowrap">
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation()
+                        onToggleFavorite(reco.reco_id)
+                      }}
+                      className="text-2xl hover:scale-110 transition-transform"
+                      title={favorites.includes(reco.reco_id) ? 'Remove from favorites' : 'Add to favorites'}
+                    >
+                      {favorites.includes(reco.reco_id) ? '⭐' : '☆'}
+                    </button>
+                  </td>
+
                   {/* Symbol */}
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <span className="text-lg font-bold text-gray-900">{reco.symbol}</span>
+                  <td className="px-8 py-5 whitespace-nowrap" onClick={() => onRowClick(reco)}>
+                    <span className="text-xl font-bold text-slate-800">{reco.symbol}</span>
                   </td>
 
                   {/* Option Type */}
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-semibold bg-green-100 text-green-800">
+                  <td className="px-8 py-5 whitespace-nowrap" onClick={() => onRowClick(reco)}>
+                    <span className="inline-flex items-center px-4 py-1.5 rounded-full text-base font-bold bg-emerald-100 text-emerald-800">
                       {opt.option_type}
                     </span>
                   </td>
 
                   {/* Strike Price */}
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <span className="text-base font-semibold text-gray-900">
+                  <td className="px-8 py-5 whitespace-nowrap" onClick={() => onRowClick(reco)}>
+                    <span className="text-lg font-bold text-gray-900">
                       {formatPrice(opt.strike)}
                     </span>
                   </td>
 
                   {/* Entry Price (Premium) */}
-                  <td className="px-6 py-4 whitespace-nowrap">
+                  <td className="px-8 py-5 whitespace-nowrap" onClick={() => onRowClick(reco)}>
                     {opt.option_entry_price ? (
-                      <span className="text-base font-bold text-blue-600">
+                      <span className="text-lg font-extrabold text-teal-700">
                         {formatPrice(opt.option_entry_price)}
                       </span>
                     ) : (
@@ -157,14 +273,14 @@ export default function RecommendationsTable({
                   </td>
 
                   {/* Expiry Date */}
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <span className="text-sm text-gray-700">{formatDate(opt.expiry)}</span>
+                  <td className="px-8 py-5 whitespace-nowrap" onClick={() => onRowClick(reco)}>
+                    <span className="text-base font-medium text-gray-700">{formatDate(opt.expiry)}</span>
                   </td>
 
                   {/* Target 1 */}
-                  <td className="px-6 py-4 whitespace-nowrap">
+                  <td className="px-8 py-5 whitespace-nowrap" onClick={() => onRowClick(reco)}>
                     {optTarget1 ? (
-                      <span className="text-base font-semibold text-green-700">
+                      <span className="text-lg font-bold text-emerald-600">
                         {formatPrice(optTarget1.value)}
                       </span>
                     ) : (
@@ -173,9 +289,9 @@ export default function RecommendationsTable({
                   </td>
 
                   {/* Target 1 Confidence */}
-                  <td className="px-6 py-4 whitespace-nowrap">
+                  <td className="px-8 py-5 whitespace-nowrap" onClick={() => onRowClick(reco)}>
                     {optTarget1 ? (
-                      <span className="inline-flex items-center px-2 py-1 rounded-md text-sm font-medium bg-green-100 text-green-800">
+                      <span className="inline-flex items-center px-3 py-1.5 rounded-lg text-base font-bold bg-emerald-100 text-emerald-900">
                         {formatPercent(optTarget1.confidence)}
                       </span>
                     ) : (
@@ -184,9 +300,9 @@ export default function RecommendationsTable({
                   </td>
 
                   {/* Target 2 */}
-                  <td className="px-6 py-4 whitespace-nowrap">
+                  <td className="px-8 py-5 whitespace-nowrap" onClick={() => onRowClick(reco)}>
                     {optTarget2 ? (
-                      <span className="text-base font-semibold text-blue-700">
+                      <span className="text-lg font-bold text-amber-600">
                         {formatPrice(optTarget2.value)}
                       </span>
                     ) : (
@@ -195,9 +311,9 @@ export default function RecommendationsTable({
                   </td>
 
                   {/* Target 2 Confidence */}
-                  <td className="px-6 py-4 whitespace-nowrap">
+                  <td className="px-8 py-5 whitespace-nowrap" onClick={() => onRowClick(reco)}>
                     {optTarget2 ? (
-                      <span className="inline-flex items-center px-2 py-1 rounded-md text-sm font-medium bg-blue-100 text-blue-800">
+                      <span className="inline-flex items-center px-3 py-1.5 rounded-lg text-base font-bold bg-amber-100 text-amber-900">
                         {formatPercent(optTarget2.confidence)}
                       </span>
                     ) : (
@@ -206,8 +322,8 @@ export default function RecommendationsTable({
                   </td>
 
                   {/* Stock Price */}
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <span className="text-sm text-gray-600">{formatPrice(reco.entry_price)}</span>
+                  <td className="px-8 py-5 whitespace-nowrap" onClick={() => onRowClick(reco)}>
+                    <span className="text-base font-semibold text-gray-700">{formatPrice(reco.entry_price)}</span>
                   </td>
                 </tr>
               )

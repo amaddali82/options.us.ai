@@ -26,6 +26,7 @@ export interface TargetSummary {
   ordinal: number  // Target number (1, 2, 3...)
   value: number  // Target price (> 0)
   confidence: number  // 0.0 to 1.0
+  eta_minutes?: number | null  // ETA in minutes
 }
 
 export interface OptionSummary {
@@ -112,6 +113,8 @@ export interface FiltersState {
   symbol: string
   sort: string
   optionsOnly: boolean
+  expiry: string
+  favorites: string[]  // Array of reco_ids
 }
 
 export interface HealthResponse {

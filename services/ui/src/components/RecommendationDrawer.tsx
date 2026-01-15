@@ -29,6 +29,16 @@ export default function RecommendationDrawer({
       month: 'long',
       day: 'numeric',
     })
+  
+  const formatTargetDate = (etaMinutes: number) => {
+    const now = new Date()
+    const targetDate = new Date(now.getTime() + etaMinutes * 60000)
+    return targetDate.toLocaleDateString('en-US', {
+      month: 'short',
+      day: 'numeric',
+      year: 'numeric'
+    })
+  }
 
   // Safe accessors for generic rationale and quality objects
   const getRationale = () => detail?.rationale as any
@@ -177,7 +187,7 @@ export default function RecommendationDrawer({
                             {formatPrice(target.value)}
                           </div>
                           <div className="text-sm text-gray-500">
-                            ETA: {target.eta_minutes ? Math.round(target.eta_minutes) : 'N/A'} min
+                            ETA: {target.eta_minutes ? formatTargetDate(target.eta_minutes) : 'N/A'}
                           </div>
                         </div>
                       </div>

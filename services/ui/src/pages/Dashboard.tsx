@@ -1,92 +1,153 @@
 import { useState } from 'react'
-import { useQuery } from '@tanstack/react-query'
-import { fetchRecommendations } from '../api'
-import FiltersBar from '../components/FiltersBar'
-import RecommendationsTable from '../components/RecommendationsTable'
-import RecommendationDrawer from '../components/RecommendationDrawer'
-import type { FiltersState, RecommendationListItem } from '../types'
+import { useQuery, useQueryClient } from '@tanstack/react-query'
+import Header from '../components/Header'
+import FiltersSection, { Filters } from '../components/FiltersSection'
+import TableSection from '../components/TableSection'
+
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000'
+
+interface Recommendation {
+  reco_id: number
+  symbol: string
+  stock_price: number
+  strategy: string
+  side: string
+  strike: number
+  expiry: string
+  premium: number
+  target1: number
+  target2: number
+  stop_loss: number
+  confidence: number
+  rationale: string
+  quality: string
+  option_entry_price?: number
+  greeks?: any
+  iv?: any
+  last_updated?: string
+}
 
 export default function Dashboard() {
-  const [filters, setFilters] = useState<FiltersState>({
-    horizon: 'all',
+  const queryClient = useQueryClient()
+  const [lastRefresh, setLastRefresh] = useState<Date | null>(null)
+  const [isRefreshing, setIsRefreshing] = useState(false)
+  
+  const [filters, setFilters] = useState<Filters>({
+    search: '',
+    strategy: 'all',
+    expiration: 'all',
+    sentiment: 'all',
     minConfidence: 0,
-    symbol: '',
-    sort: 'rank',
-    optionsOnly: true,  // Enable options filter by default
+    favorites: [],
+    showFavoritesOnly: false
   })
 
-  const [selectedRecommendation, setSelectedRecommendation] =
-    useState<RecommendationListItem | null>(null)
-
-  const { data, isLoading, isError, error } = useQuery({
-    queryKey: ['recommendations', filters],
-    queryFn: () => fetchRecommendations(filters),
+  // Fetch recommendations
+  const { data: recommendations = [], isLoading } = useQuery<Recommendation[]>({
+    queryKey: ['recommendations'],
+    queryFn: async () => {
+      const response = await fetch(`${API_URL}/recommendations`)
+      if (!response.ok) throw new Error('Failed to fetch recommendations')
+      const data = await response.json()
+      return data.recommendations || []
+    },
+    refetchInterval: 60000, // Refetch every minute
   })
 
-  const handleRowClick = (reco: RecommendationListItem) => {
-    setSelectedRecommendation(reco)
+  // Manual refresh function
+  const handleRefresh = async () => {
+    setIsRefreshing(true)
+    try {
+      const response = await fetch(`${API_URL}/recommendations/refresh`, {
+        method: 'POST',
+      })
+      
+      if (!response.ok) {
+        throw new Error('Failed to refresh data')
+      }
+      
+      // Invalidate and refetch
+      await queryClient.invalidateQueries({ queryKey: ['recommendations'] })
+      setLastRefresh(new Date())
+    } catch (error) {
+      console.error('Error refreshing data:', error)
+    } finally {
+      setIsRefreshing(false)
+    }
   }
 
-  const handleDrawerClose = () => {
-    setSelectedRecommendation(null)
-  }
+  // Apply filters to recommendations
+  const filteredRecommendations = recommendations.filter(reco => {
+    // Search filter
+    if (filters.search && !reco.symbol.toUpperCase().includes(filters.search.toUpperCase())) {
+      return false
+    }
+    
+    // Strategy filter
+    if (filters.strategy !== 'all' && reco.strategy !== filters.strategy) {
+      return false
+    }
+    
+    // Expiration filter
+    if (filters.expiration !== 'all') {
+      const expiryDate = new Date(reco.expiry)
+      const today = new Date()
+      const daysUntilExpiry = Math.ceil((expiryDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24))
+      
+      if (filters.expiration === '0-7' && (daysUntilExpiry < 0 || daysUntilExpiry > 7)) return false
+      if (filters.expiration === '8-30' && (daysUntilExpiry < 8 || daysUntilExpiry > 30)) return false
+      if (filters.expiration === '31-60' && (daysUntilExpiry < 31 || daysUntilExpiry > 60)) return false
+      if (filters.expiration === '61+' && daysUntilExpiry < 61) return false
+    }
+    
+    // Sentiment filter
+    if (filters.sentiment !== 'all' && reco.side !== filters.sentiment) {
+      return false
+    }
+    
+    // Confidence filter
+    if (reco.confidence < filters.minConfidence) {
+      return false
+    }
+    
+    // Favorites filter
+    if (filters.showFavoritesOnly && !filters.favorites.includes(reco.reco_id)) {
+      return false
+    }
+    
+    return true
+  })
 
-  if (isError) {
-    return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="bg-white p-8 rounded-lg shadow-lg max-w-md">
-          <div className="flex items-center justify-center w-12 h-12 mx-auto bg-danger-100 rounded-full mb-4">
-            <svg
-              className="h-6 w-6 text-danger-600"
-              fill="none"
-              viewBox="0 0 24 24"
-              stroke="currentColor"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
-              />
-            </svg>
-          </div>
-          <h2 className="text-xl font-semibold text-gray-900 text-center mb-2">
-            Connection Error
-          </h2>
-          <p className="text-gray-600 text-center mb-4">
-            {error instanceof Error ? error.message : 'Failed to load recommendations'}
-          </p>
-          <button
-            onClick={() => window.location.reload()}
-            className="w-full px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors"
-          >
-            Retry
-          </button>
-        </div>
-      </div>
-    )
+  const handleToggleFavorite = (recoId: number) => {
+    setFilters(prev => ({
+      ...prev,
+      favorites: prev.favorites.includes(recoId)
+        ? prev.favorites.filter(id => id !== recoId)
+        : [...prev.favorites, recoId]
+    }))
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50">
-      <FiltersBar
-        filters={filters}
-        onFiltersChange={setFilters}
-        totalCount={data?.meta.total_returned ?? 0}
+    <div className="min-h-screen bg-gradient-to-br from-purple-50 via-pink-50 to-indigo-50">
+      <Header
+        lastRefresh={lastRefresh}
+        onRefresh={handleRefresh}
+        isRefreshing={isRefreshing}
       />
       
-      <div className="container mx-auto px-6 py-6">
-        <RecommendationsTable
-          recommendations={data?.recommendations ?? []}
-          onRowClick={handleRowClick}
+      <div className="max-w-[1600px] mx-auto px-8 py-8 space-y-6">
+        <FiltersSection
+          filters={filters}
+          onFiltersChange={setFilters}
+        />
+        
+        <TableSection
+          data={filteredRecommendations}
           isLoading={isLoading}
+          favorites={filters.favorites}
+          onToggleFavorite={handleToggleFavorite}
         />
       </div>
-
-      <RecommendationDrawer
-        recommendation={selectedRecommendation}
-        onClose={handleDrawerClose}
-      />
     </div>
   )
 }

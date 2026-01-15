@@ -192,15 +192,20 @@ def calculate_option_strike(entry_price: float, side: str, delta_target: float) 
     
     strike = entry_price * strike_pct
     
-    # Round to reasonable strike increments
-    if strike < 50:
+    # Round to standard option strike increments
+    # Most stocks use $5 increments, some use $2.50 or $1
+    if strike < 25:
+        # Low priced stocks: $0.50 or $1 increments
         strike = round(strike / 0.5) * 0.5
-    elif strike < 200:
+    elif strike < 50:
+        # $1 increments
         strike = round(strike / 1) * 1
-    elif strike < 500:
-        strike = round(strike / 5) * 5
+    elif strike < 100:
+        # $2.50 or $5 increments
+        strike = round(strike / 2.5) * 2.5
     else:
-        strike = round(strike / 10) * 10
+        # $5 increments for most stocks
+        strike = round(strike / 5) * 5
     
     return strike
 
@@ -447,16 +452,40 @@ def generate_recommendation(
         # Greeks
         greeks = calculate_greeks(option_type, delta_target, iv, dte)
         
-        # Option targets (premium)
-        if side_choice == "BUY":  # CALL
-            opt_tp1_pct = random.uniform(0.40, 0.80)
-            opt_tp2_pct = random.uniform(0.90, 1.50)
-        else:  # PUT
-            opt_tp1_pct = random.uniform(0.40, 0.80)
-            opt_tp2_pct = random.uniform(0.90, 1.50)
+        # Option targets (premium) - calculate based on underlying price movement and time decay
+        # When underlying moves to TP1/TP2, option value increases significantly
+        # Account for intrinsic value gain and remaining time value
         
-        opt_tp1 = round(option_entry_price * (1 + opt_tp1_pct), 2)
-        opt_tp2 = round(option_entry_price * (1 + opt_tp2_pct), 2)
+        if side_choice == "BUY":  # CALL
+            # For calls: as underlying rises, option gains intrinsic + time value
+            # TP1: underlying at tp1_value, option gains (tp1_value - strike) + remaining time value
+            tp1_intrinsic_gain = max(0, tp1_value - strike) - max(0, entry_price - strike)
+            tp2_intrinsic_gain = max(0, tp2_value - strike) - max(0, entry_price - strike)
+            
+            # Time decay factor (less time value at TP due to time passing)
+            time_decay_tp1 = 0.85  # Assume 15% time decay to TP1
+            time_decay_tp2 = 0.70  # Assume 30% time decay to TP2
+            
+            opt_tp1 = option_entry_price + tp1_intrinsic_gain + (option_entry_price * 0.20 * time_decay_tp1)
+            opt_tp2 = option_entry_price + tp2_intrinsic_gain + (option_entry_price * 0.30 * time_decay_tp2)
+            
+        else:  # PUT
+            # For puts: as underlying falls, option gains intrinsic + time value
+            tp1_intrinsic_gain = max(0, strike - tp1_value) - max(0, strike - entry_price)
+            tp2_intrinsic_gain = max(0, strike - tp2_value) - max(0, strike - entry_price)
+            
+            time_decay_tp1 = 0.85
+            time_decay_tp2 = 0.70
+            
+            opt_tp1 = option_entry_price + tp1_intrinsic_gain + (option_entry_price * 0.20 * time_decay_tp1)
+            opt_tp2 = option_entry_price + tp2_intrinsic_gain + (option_entry_price * 0.30 * time_decay_tp2)
+        
+        # Ensure targets are reasonable (at least 25% gain for TP1, 50% for TP2)
+        opt_tp1 = max(opt_tp1, option_entry_price * 1.25)
+        opt_tp2 = max(opt_tp2, option_entry_price * 1.50)
+        
+        opt_tp1 = round(opt_tp1, 2)
+        opt_tp2 = round(opt_tp2, 2)
         
         reco["option_idea"] = {
             "option_type": option_type,
@@ -474,14 +503,14 @@ def generate_recommendation(
                     "ordinal": 1,
                     "name": "Premium TP1",
                     "value": opt_tp1,
-                    "confidence": round(confidence_overall - random.uniform(0.08, 0.15), 2),
+                    "confidence": round(confidence_overall * 0.85, 2),  # 85% of underlying confidence
                     "eta_minutes": eta1
                 },
                 {
                     "ordinal": 2,
                     "name": "Premium TP2",
                     "value": opt_tp2,
-                    "confidence": round(confidence_overall - random.uniform(0.15, 0.22), 2),
+                    "confidence": round(confidence_overall * 0.70, 2),  # 70% of underlying confidence
                     "eta_minutes": eta2
                 }
             ]

@@ -17,7 +17,6 @@ export default function FiltersBar({
 
   const handleSymbolChange = (value: string) => {
     setLocalSymbol(value)
-    // Debounce: only update on blur or Enter
   }
 
   const handleSymbolBlur = () => {
@@ -33,54 +32,45 @@ export default function FiltersBar({
   }
 
   return (
-    <div className="bg-white border-b border-gray-200 px-6 py-4">
-      <div className="flex items-center justify-between mb-4">
+    <div className="bg-gradient-to-r from-blue-50 via-indigo-50 to-purple-50 border-b border-gray-200 px-6 py-5 shadow-sm">
+      <div className="flex items-center justify-between mb-5">
         <div>
-          <h1 className="text-2xl font-semibold text-gray-900">
-            Trading Recommendations
+          <h1 className="text-3xl font-bold text-gray-800">
+            📊 Options Trading Dashboard
           </h1>
+          <p className="text-sm text-gray-600 mt-1">Real-time CALL options with live market data</p>
         </div>
         <div className="flex items-center gap-4">
-          <div className="text-sm text-gray-500">
-            {totalCount} {totalCount === 1 ? 'recommendation' : 'recommendations'}
+          <div className="px-4 py-2 bg-white rounded-lg shadow-sm">
+            <div className="text-xs text-gray-500 uppercase tracking-wide">Total Options</div>
+            <div className="text-2xl font-bold text-blue-600">{totalCount}</div>
           </div>
-          <div className="relative group">
-            <HealthIndicator />
-          </div>
+          <HealthIndicator />
         </div>
       </div>
 
-      <div className="flex flex-wrap gap-4">
-        {/* Horizon Filter */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4 bg-white p-4 rounded-lg shadow-sm">
+        {/* Symbol Search */}
         <div className="flex flex-col">
-          <label
-            htmlFor="horizon"
-            className="text-xs font-medium text-gray-600 mb-1"
-          >
-            Horizon
+          <label htmlFor="symbol" className="text-xs font-semibold text-gray-700 mb-2 uppercase tracking-wide">
+            🔍 Symbol
           </label>
-          <select
-            id="horizon"
-            value={filters.horizon}
-            onChange={(e) =>
-              onFiltersChange({ ...filters, horizon: e.target.value })
-            }
-            className="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
-          >
-            <option value="all">All Horizons</option>
-            <option value="intraday">Intraday</option>
-            <option value="swing">Swing</option>
-            <option value="position">Position</option>
-          </select>
+          <input
+            id="symbol"
+            type="text"
+            placeholder="e.g., AAPL, TSLA..."
+            value={localSymbol}
+            onChange={(e) => handleSymbolChange(e.target.value)}
+            onBlur={handleSymbolBlur}
+            onKeyDown={handleSymbolKeyDown}
+            className="px-4 py-2 border-2 border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-transparent transition-all"
+          />
         </div>
 
-        {/* Min Confidence Slider */}
-        <div className="flex flex-col flex-1 min-w-[200px] max-w-[300px]">
-          <label
-            htmlFor="confidence"
-            className="text-xs font-medium text-gray-600 mb-1"
-          >
-            Min Confidence: {(filters.minConfidence * 100).toFixed(0)}%
+        {/* Min Confidence */}
+        <div className="flex flex-col">
+          <label htmlFor="confidence" className="text-xs font-semibold text-gray-700 mb-2 uppercase tracking-wide">
+            📈 Min Confidence: <span className="text-blue-600">{(filters.minConfidence * 100).toFixed(0)}%</span>
           </label>
           <input
             id="confidence"
@@ -95,41 +85,39 @@ export default function FiltersBar({
                 minConfidence: parseInt(e.target.value) / 100,
               })
             }
-            className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-primary-600"
+            className="w-full h-3 bg-gradient-to-r from-gray-200 to-blue-200 rounded-lg appearance-none cursor-pointer accent-blue-600 mt-1"
           />
           <div className="flex justify-between text-xs text-gray-400 mt-1">
             <span>0%</span>
+            <span>50%</span>
             <span>100%</span>
           </div>
         </div>
 
-        {/* Symbol Search */}
+        {/* Horizon Filter */}
         <div className="flex flex-col">
-          <label
-            htmlFor="symbol"
-            className="text-xs font-medium text-gray-600 mb-1"
-          >
-            Symbol
+          <label htmlFor="horizon" className="text-xs font-semibold text-gray-700 mb-2 uppercase tracking-wide">
+            ⏱️ Horizon
           </label>
-          <input
-            id="symbol"
-            type="text"
-            placeholder="Search symbol..."
-            value={localSymbol}
-            onChange={(e) => handleSymbolChange(e.target.value)}
-            onBlur={handleSymbolBlur}
-            onKeyDown={handleSymbolKeyDown}
-            className="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent w-40"
-          />
+          <select
+            id="horizon"
+            value={filters.horizon}
+            onChange={(e) =>
+              onFiltersChange({ ...filters, horizon: e.target.value })
+            }
+            className="px-4 py-2 border-2 border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-transparent bg-white transition-all"
+          >
+            <option value="all">All Horizons</option>
+            <option value="intraday">Intraday</option>
+            <option value="swing">Swing</option>
+            <option value="position">Position</option>
+          </select>
         </div>
 
         {/* Sort Dropdown */}
         <div className="flex flex-col">
-          <label
-            htmlFor="sort"
-            className="text-xs font-medium text-gray-600 mb-1"
-          >
-            Sort By
+          <label htmlFor="sort" className="text-xs font-semibold text-gray-700 mb-2 uppercase tracking-wide">
+            🔢 Sort By
           </label>
           <select
             id="sort"
@@ -137,37 +125,19 @@ export default function FiltersBar({
             onChange={(e) =>
               onFiltersChange({ ...filters, sort: e.target.value })
             }
-            className="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            className="px-4 py-2 border-2 border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-transparent bg-white transition-all"
           >
-            <option value="rank">Rank (High to Low)</option>
-            <option value="confidence">Confidence (High to Low)</option>
-            <option value="time">Time (Newest First)</option>
+            <option value="rank">🏆 Rank (Best First)</option>
+            <option value="confidence">💪 Confidence (High to Low)</option>
+            <option value="asof">🕒 Time (Newest First)</option>
           </select>
         </div>
 
-        {/* Options Only Toggle */}
+        {/* Clear Filters Button */}
         <div className="flex flex-col justify-end">
-          <label className="flex items-center space-x-2 cursor-pointer">
-            <input
-              type="checkbox"
-              checked={filters.optionsOnly}
-              onChange={(e) =>
-                onFiltersChange({ ...filters, optionsOnly: e.target.checked })
-              }
-              className="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 focus:ring-2"
-            />
-            <span className="text-sm font-medium text-gray-700">
-              Options Only
-            </span>
-          </label>
-        </div>
-
-        {/* Clear Filters */}
-        {(filters.horizon !== 'all' ||
-          filters.minConfidence > 0 ||
-          filters.symbol.trim() !== '' ||
-          filters.optionsOnly) && (
-          <div className="flex items-end">
+          {(filters.horizon !== 'all' ||
+            filters.minConfidence > 0 ||
+            filters.symbol.trim() !== '') && (
             <button
               onClick={() => {
                 setLocalSymbol('')
@@ -176,15 +146,15 @@ export default function FiltersBar({
                   minConfidence: 0,
                   symbol: '',
                   sort: 'rank',
-                  optionsOnly: false,
+                  optionsOnly: true,
                 })
               }}
-              className="px-3 py-2 text-sm text-gray-600 hover:text-gray-900 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
+              className="px-4 py-2 text-sm font-semibold text-white bg-gradient-to-r from-red-500 to-pink-500 rounded-lg hover:from-red-600 hover:to-pink-600 transition-all shadow-sm"
             >
-              Clear Filters
+              ✖ Clear Filters
             </button>
-          </div>
-        )}
+          )}
+        </div>
       </div>
     </div>
   )

@@ -68,7 +68,7 @@ export default function Dashboard() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50">
       <FiltersBar
         filters={filters}
         onFiltersChange={setFilters}
@@ -76,13 +76,11 @@ export default function Dashboard() {
       />
       
       <div className="container mx-auto px-6 py-6">
-        <div className="bg-white rounded-lg shadow-sm overflow-hidden">
-          <RecommendationsTable
-            recommendations={data?.recommendations ?? []}
-            onRowClick={handleRowClick}
-            isLoading={isLoading}
-          />
-        </div>
+        <RecommendationsTable
+          recommendations={data?.recommendations ?? []}
+          onRowClick={handleRowClick}
+          isLoading={isLoading}
+        />
       </div>
 
       <RecommendationDrawer

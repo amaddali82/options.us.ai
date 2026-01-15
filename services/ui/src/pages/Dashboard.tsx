@@ -82,11 +82,11 @@ export default function Dashboard() {
 
   // Transform API data to match TableSection interface
   const recommendations: Recommendation[] = apiRecommendations
-    .filter(api => api.option_summary) // Only show options
-    .map((api) => {
+    .filter((api: ApiRecommendation) => api.option_summary) // Only show options
+    .map((api: ApiRecommendation) => {
       const optTargets = api.option_summary?.option_targets || []
-      const optTarget1 = optTargets.find(t => t.ordinal === 1)?.value || 0
-      const optTarget2 = optTargets.find(t => t.ordinal === 2)?.value || 0
+      const optTarget1 = optTargets.find((t: TargetSummary) => t.ordinal === 1)?.value || 0
+      const optTarget2 = optTargets.find((t: TargetSummary) => t.ordinal === 2)?.value || 0
       const optPremium = api.option_summary?.option_entry_price || 0
       
       // Calculate stop loss as 30% below entry premium

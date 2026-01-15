@@ -1,6 +1,6 @@
 """
 Real-time stock price fetcher and recommendation updater
-Uses yfinance to fetch live prices and recalculate targets/confidence
+Uses yfinance as primary source with Alpha Vantage and Finnhub as fallbacks
 """
 import yfinance as yf
 from datetime import datetime, timezone, timedelta
@@ -8,21 +8,102 @@ from typing import List, Dict, Optional
 import logging
 import time
 import asyncio
+import os
+import requests
 
 logger = logging.getLogger(__name__)
+
+# Get API keys from environment
+ALPHA_VANTAGE_API_KEY = os.getenv('ALPHA_VANTAGE_API_KEY', '')
+FINNHUB_API_KEY = os.getenv('FINNHUB_API_KEY', '')
+
+
+def fetch_alpha_vantage_price(symbol: str) -> Optional[float]:
+    """
+    Fetch stock price from Alpha Vantage API
+    Free tier: 5 calls/minute, 500 calls/day
+    
+    Args:
+        symbol: Stock symbol to fetch
+        
+    Returns:
+        Current price or None if fetch fails
+    """
+    if not ALPHA_VANTAGE_API_KEY:
+        return None
+        
+    try:
+        url = f"https://www.alphavantage.co/query"
+        params = {
+            'function': 'GLOBAL_QUOTE',
+            'symbol': symbol,
+            'apikey': ALPHA_VANTAGE_API_KEY
+        }
+        
+        response = requests.get(url, params=params, timeout=10)
+        response.raise_for_status()
+        data = response.json()
+        
+        if 'Global Quote' in data and '05. price' in data['Global Quote']:
+            price = float(data['Global Quote']['05. price'])
+            logger.info(f"Alpha Vantage: Fetched {symbol}: ${price:.2f}")
+            return price
+            
+    except Exception as e:
+        logger.debug(f"Alpha Vantage failed for {symbol}: {str(e)[:100]}")
+    
+    return None
+
+
+def fetch_finnhub_price(symbol: str) -> Optional[float]:
+    """
+    Fetch stock price from Finnhub API
+    Free tier: 60 calls/minute
+    
+    Args:
+        symbol: Stock symbol to fetch
+        
+    Returns:
+        Current price or None if fetch fails
+    """
+    if not FINNHUB_API_KEY:
+        return None
+        
+    try:
+        url = f"https://finnhub.io/api/v1/quote"
+        params = {
+            'symbol': symbol,
+            'token': FINNHUB_API_KEY
+        }
+        
+        response = requests.get(url, params=params, timeout=10)
+        response.raise_for_status()
+        data = response.json()
+        
+        if 'c' in data and data['c'] > 0:  # 'c' is current price
+            price = float(data['c'])
+            logger.info(f"Finnhub: Fetched {symbol}: ${price:.2f}")
+            return price
+            
+    except Exception as e:
+        logger.debug(f"Finnhub failed for {symbol}: {str(e)[:100]}")
+    
+    return None
 
 
 def fetch_single_price_with_retry(symbol: str, max_retries: int = 3) -> Optional[float]:
     """
-    Fetch a single stock price with retry logic and exponential backoff
+    Fetch a single stock price with retry logic and multiple data sources
+    Tries: Yahoo Finance -> Alpha Vantage -> Finnhub
     
     Args:
         symbol: Stock symbol to fetch
-        max_retries: Maximum number of retry attempts
+        max_retries: Maximum number of retry attempts per source
         
     Returns:
         Current price or None if all attempts fail
     """
+    # Try Yahoo Finance first (free, no API key needed)
     for attempt in range(max_retries):
         try:
             ticker = yf.Ticker(symbol)
@@ -36,6 +117,7 @@ def fetch_single_price_with_retry(symbol: str, max_retries: int = 3) -> Optional
                     # Get the most recent close price
                     price = hist['Close'].iloc[-1]
                     if price and price > 0:
+                        logger.info(f"Yahoo Finance: Fetched {symbol}: ${price:.2f}")
                         return float(price)
             except Exception as e:
                 logger.debug(f"{symbol} history method failed: {str(e)[:50]}")
@@ -47,6 +129,7 @@ def fetch_single_price_with_retry(symbol: str, max_retries: int = 3) -> Optional
                         fast_info = ticker.fast_info
                         price = fast_info.get('lastPrice') or fast_info.get('previousClose')
                         if price and price > 0:
+                            logger.info(f"Yahoo Finance: Fetched {symbol}: ${price:.2f}")
                             return float(price)
                 except Exception as e:
                     logger.debug(f"{symbol} fast_info method failed: {str(e)[:50]}")
@@ -57,17 +140,31 @@ def fetch_single_price_with_retry(symbol: str, max_retries: int = 3) -> Optional
                     info = ticker.info
                     price = info.get('currentPrice') or info.get('regularMarketPrice') or info.get('previousClose')
                     if price and price > 0:
+                        logger.info(f"Yahoo Finance: Fetched {symbol}: ${price:.2f}")
                         return float(price)
                 except Exception as e:
                     logger.debug(f"{symbol} info method failed: {str(e)[:50]}")
             
         except Exception as e:
-            logger.warning(f"Attempt {attempt + 1}/{max_retries} failed for {symbol}: {str(e)[:100]}")
+            logger.debug(f"Yahoo Finance attempt {attempt + 1}/{max_retries} failed for {symbol}: {str(e)[:100]}")
             if attempt < max_retries - 1:
                 # Exponential backoff: 1s, 2s, 4s
                 sleep_time = 2 ** attempt
                 time.sleep(sleep_time)
     
+    # If Yahoo Finance fails, try Alpha Vantage
+    logger.info(f"Yahoo Finance exhausted for {symbol}, trying Alpha Vantage...")
+    price = fetch_alpha_vantage_price(symbol)
+    if price:
+        return price
+    
+    # If Alpha Vantage fails, try Finnhub
+    logger.info(f"Alpha Vantage failed for {symbol}, trying Finnhub...")
+    price = fetch_finnhub_price(symbol)
+    if price:
+        return price
+    
+    logger.warning(f"All data sources exhausted for {symbol}")
     return None
 
 

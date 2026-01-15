@@ -43,10 +43,12 @@ def fetch_stock_prices(symbols: List[str], delay: float = 0.5) -> Dict[str, floa
                     # Try multiple methods to get price
                     price = None
                     
-                    # Method 1: Try history first (most reliable, avoids rate limits)
+                    # Method 1: Try history with longer period to get most recent price
                     try:
-                        hist = ticker.history(period='1d')
+                        # Get last 5 days to ensure we catch most recent trading day
+                        hist = ticker.history(period='5d')
                         if not hist.empty:
+                            # Get the most recent close price
                             price = hist['Close'].iloc[-1]
                     except:
                         pass
@@ -56,7 +58,7 @@ def fetch_stock_prices(symbols: List[str], delay: float = 0.5) -> Dict[str, floa
                         try:
                             if hasattr(ticker, 'fast_info'):
                                 fast_info = ticker.fast_info
-                                price = fast_info.get('lastPrice') or fast_info.get('last_price')
+                                price = fast_info.get('lastPrice') or fast_info.get('last_price') or fast_info.get('previousClose')
                         except:
                             pass
                     

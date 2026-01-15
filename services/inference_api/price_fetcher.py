@@ -43,27 +43,22 @@ def fetch_stock_prices(symbols: List[str], delay: float = 0.5) -> Dict[str, floa
                     # Try multiple methods to get price
                     price = None
                     
-                    # Method 1: Try fast_info (fastest but may fail)
+                    # Method 1: Try history first (most reliable, avoids rate limits)
                     try:
-                        if hasattr(ticker, 'fast_info'):
-                            fast_info = ticker.fast_info
-                            price = fast_info.get('lastPrice') or fast_info.get('last_price')
-                    except:
-                        pass
-                    
-                    # Method 2: Try regular info dict (more reliable)
-                    if not price:
-                        try:
-                            info = ticker.info
-                            price = info.get('regularMarketPrice') or info.get('currentPrice') or info.get('previousClose')
-                        except:
-                            pass
-                    
-                    # Method 3: Fallback to history (most reliable but slowest)
-                    if not price:
                         hist = ticker.history(period='1d')
                         if not hist.empty:
                             price = hist['Close'].iloc[-1]
+                    except:
+                        pass
+                    
+                    # Method 2: Fallback to fast_info if history fails
+                    if not price:
+                        try:
+                            if hasattr(ticker, 'fast_info'):
+                                fast_info = ticker.fast_info
+                                price = fast_info.get('lastPrice') or fast_info.get('last_price')
+                        except:
+                            pass
                     
                     if price and price > 0:
                         prices[symbol] = float(price)

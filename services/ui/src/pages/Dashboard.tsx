@@ -6,6 +6,32 @@ import TableSection from '../components/TableSection'
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000'
 
+interface TargetSummary {
+  ordinal: number
+  value: number
+  confidence: number
+}
+
+interface OptionSummary {
+  option_type: string
+  expiry: string
+  strike: number
+  option_entry_price?: number
+  option_targets?: TargetSummary[]
+}
+
+interface ApiRecommendation {
+  reco_id: string
+  symbol: string
+  side: string
+  entry_price: number
+  confidence_overall: number
+  horizon: string
+  tp1?: TargetSummary
+  tp2?: TargetSummary
+  option_summary?: OptionSummary
+}
+
 interface Recommendation {
   reco_id: number
   symbol: string
@@ -43,7 +69,7 @@ export default function Dashboard() {
   })
 
   // Fetch recommendations
-  const { data: recommendations = [], isLoading } = useQuery<Recommendation[]>({
+  const { data: apiRecommendations = [], isLoading } = useQuery<ApiRecommendation[]>({
     queryKey: ['recommendations'],
     queryFn: async () => {
       const response = await fetch(`${API_URL}/recommendations`)
@@ -53,6 +79,37 @@ export default function Dashboard() {
     },
     refetchInterval: 60000, // Refetch every minute
   })
+
+  // Transform API data to match TableSection interface
+  const recommendations: Recommendation[] = apiRecommendations
+    .filter(api => api.option_summary) // Only show options
+    .map((api) => {
+      const optTargets = api.option_summary?.option_targets || []
+      const optTarget1 = optTargets.find(t => t.ordinal === 1)?.value || 0
+      const optTarget2 = optTargets.find(t => t.ordinal === 2)?.value || 0
+      const optPremium = api.option_summary?.option_entry_price || 0
+      
+      // Calculate stop loss as 30% below entry premium
+      const stopLoss = optPremium * 0.7
+      
+      return {
+        reco_id: parseInt(api.reco_id) || 0,
+        symbol: api.symbol,
+        stock_price: api.entry_price,
+        strategy: api.option_summary?.option_type?.toLowerCase() || 'unknown',
+        side: api.side.toLowerCase(),
+        strike: api.option_summary?.strike || 0,
+        expiry: api.option_summary?.expiry || '',
+        premium: optPremium,
+        target1: optTarget1,
+        target2: optTarget2,
+        stop_loss: stopLoss,
+        confidence: api.confidence_overall,
+        rationale: `${api.horizon} ${api.side} opportunity with ${api.option_summary?.option_type}`,
+        quality: api.confidence_overall >= 0.8 ? 'high' : api.confidence_overall >= 0.6 ? 'medium' : 'low',
+        option_entry_price: optPremium
+      }
+    })
 
   // Manual refresh function
   const handleRefresh = async () => {

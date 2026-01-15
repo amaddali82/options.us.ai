@@ -26,6 +26,18 @@ from ml_predictor import (
 logger = logging.getLogger(__name__)
 scheduler = AsyncIOScheduler()
 
+# Track last sync times
+last_stock_sync = None
+last_options_sync = None
+
+
+def get_last_sync_times():
+    """Get last sync times for stock and options updates"""
+    return {
+        'stock_prices': last_stock_sync,
+        'options_data': last_options_sync
+    }
+
 
 async def get_db_connection():
     """Get database connection"""
@@ -51,6 +63,7 @@ async def get_db_connection():
 
 async def update_stock_prices():
     """Update stock prices and recalculate stock targets - runs every 30 minutes"""
+    global last_stock_sync
     logger.info("🔄 Starting stock price update job...")
     
     try:
@@ -67,6 +80,7 @@ async def update_stock_prices():
         if not rows:
             logger.info("No active recommendations to update")
             await conn.close()
+            last_stock_sync = datetime.now(timezone.utc)
             return
         
         # Group by symbol
@@ -116,6 +130,7 @@ async def update_stock_prices():
             updated_count += 1
         
         await conn.close()
+        last_stock_sync = datetime.now(timezone.utc)
         logger.info(f"✅ Updated {updated_count} recommendations with new stock prices")
         
     except Exception as e:
@@ -124,6 +139,7 @@ async def update_stock_prices():
 
 async def update_options_data():
     """Update option prices and Greeks - runs every 10 minutes"""
+    global last_options_sync
     logger.info("🔄 Starting options data update job...")
     
     try:
@@ -233,6 +249,7 @@ async def update_options_data():
             updated_count += 1
         
         await conn.close()
+        last_options_sync = datetime.now(timezone.utc)
         logger.info(f"✅ Updated {updated_count} options with ML predictions and real-time data")
         
     except Exception as e:

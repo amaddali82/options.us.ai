@@ -27,7 +27,7 @@ from schemas import (
 )
 from ranking import calculate_rank_from_model
 from reco_generator import generate_batch, SYMBOL_UNIVERSE
-from scheduler import start_scheduler, stop_scheduler, update_stock_prices, update_options_data
+from scheduler import start_scheduler, stop_scheduler, update_stock_prices, update_options_data, get_last_sync_times
 
 # Configure logging
 logging.basicConfig(
@@ -152,10 +152,15 @@ async def health_check(db: AsyncSession = Depends(get_async_db)):
         # Test database connection
         await db.execute(select(1))
         
+        # Get last sync times
+        sync_times = get_last_sync_times()
+        
         return HealthResponse(
             status="ok",
             timestamp=datetime.now(timezone.utc),
-            database="connected"
+            database="connected",
+            last_stock_sync=sync_times['stock_prices'],
+            last_options_sync=sync_times['options_data']
         )
     except Exception as e:
         logger.error(f"Health check failed: {e}")

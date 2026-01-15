@@ -149,13 +149,17 @@ class HealthResponse(BaseModel):
     status: str
     timestamp: datetime
     database: str = "connected"
+    last_stock_sync: Optional[datetime] = None
+    last_options_sync: Optional[datetime] = None
     
     model_config = ConfigDict(
         json_schema_extra={
             "example": {
                 "status": "ok",
                 "timestamp": "2026-01-14T12:00:00Z",
-                "database": "connected"
+                "database": "connected",
+                "last_stock_sync": "2026-01-14T11:30:00Z",
+                "last_options_sync": "2026-01-14T11:35:00Z"
             }
         }
     )

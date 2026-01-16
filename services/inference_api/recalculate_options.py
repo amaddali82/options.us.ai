@@ -184,7 +184,7 @@ async def recalculate_all_options():
                 dte=dte,
                 volatility=iv
             )
-            ml_confidence = ml_confidence_result['overall'] if isinstance(ml_confidence_result, dict) else ml_confidence_result
+            ml_confidence = ml_confidence_result['confidence'] if isinstance(ml_confidence_result, dict) else ml_confidence_result
             
             # Calculate profit probability
             profit_prob = calculate_profit_probability(
